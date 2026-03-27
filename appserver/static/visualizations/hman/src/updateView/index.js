@@ -48,13 +48,18 @@ const _updateView = function (data, config) {
     const ns = this.getPropertyNamespaceInfo().propertyNamespace;
     const preBandHeight = parseInt(config[ns + 'timeline_bandHeight']) || 32;
     const preBandGap = parseInt(config[ns + 'timeline_bandGap']) || 8;
-    const preCategories = [...new Set(data.rows.map(r => r[2]))];
+    const preCategories = [...new Set(data.rows.filter(r => r[0] && r[1] && r[2] && r[3]).map(r => r[2]))];
     const preHeight = (preBandHeight + preBandGap) * preCategories.length + 210;
-    this.el.parentElement.style.height = `${preHeight}px`;
-    const resizablePanel = this.el.closest('.shared-reportvisualizer.ui-resizable');
-    if (resizablePanel) {
-      resizablePanel.style.overflowY = resizablePanel.clientHeight < preHeight ? 'scroll' : 'hidden';
+    // Ensure our scroll wrapper exists directly around this.el
+    let scrollWrapper = this.el.parentElement.querySelector('.hman-scroll-wrapper');
+    if (!scrollWrapper) {
+      scrollWrapper = document.createElement('div');
+      scrollWrapper.className = 'hman-scroll-wrapper';
+      scrollWrapper.style.cssText = 'width:100%; overflow-x:hidden;';
+      this.el.parentElement.appendChild(scrollWrapper);
+      scrollWrapper.appendChild(this.el);
     }
+    this.el.style.height = `${preHeight}px`;
     tmpChart['instanceByDom'] = echarts.init(this.el, echartsTheme, { height: preHeight });
     tmpChart['_applyBgColor'] = true;
   } else {
@@ -78,6 +83,18 @@ const _updateView = function (data, config) {
     option = this._buildSimpleBoxplotOption(data, config);
   } else if (echartProps.dataType.toLowerCase() == "timeline") {
     option = this._buildTimelineOption(data, config, tmpChart['instanceByDom'], tmpChart);
+    if (tmpChart['visualizationHeight']) {
+      const contentHeight = tmpChart['visualizationHeight'];
+      this.el.style.height = `${contentHeight}px`;
+      tmpChart['instanceByDom'].resize({ height: contentHeight });
+      const scrollWrapper = this.el.closest('.hman-scroll-wrapper');
+      const resizablePanel = this.el.closest('.shared-reportvisualizer.ui-resizable');
+      if (scrollWrapper && resizablePanel) {
+        const panelHeight = resizablePanel.clientHeight;
+        scrollWrapper.style.height = `${panelHeight}px`;
+        scrollWrapper.style.overflowY = panelHeight < contentHeight ? 'scroll' : 'hidden';
+      }
+    }
   } else if (echartProps.dataType.toLowerCase() == "hourlytimeline") {
     option = this._buildHourlyTimelineOption(data, config, tmpChart['instanceByDom']);
   }

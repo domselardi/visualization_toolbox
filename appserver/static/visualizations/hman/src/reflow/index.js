@@ -7,10 +7,14 @@ const _reflow = function () {
     const currentChartEntry = this.scopedVariables['_renderedEchartsArray'].find(o => o.instanceByDom === myChart);
     if(currentChartEntry && currentChartEntry['visualizationType'] === 'timeline') {
       const theChartHolder = myChart.getDom();
-      theChartHolder.parentElement.style.height = `${currentChartEntry['visualizationHeight']}px`;
+      const contentHeight = currentChartEntry['visualizationHeight'];
+      theChartHolder.style.height = `${contentHeight}px`;
+      const scrollWrapper = theChartHolder.closest('.hman-scroll-wrapper');
       const resizablePanel = theChartHolder.closest('.shared-reportvisualizer.ui-resizable');
-      if (resizablePanel) {
-        resizablePanel.style.overflowY = resizablePanel.clientHeight < currentChartEntry['visualizationHeight'] ? 'scroll' : 'hidden';
+      if (scrollWrapper && resizablePanel) {
+        const panelHeight = resizablePanel.clientHeight;
+        scrollWrapper.style.height = `${panelHeight}px`;
+        scrollWrapper.style.overflowY = panelHeight < contentHeight ? 'scroll' : 'hidden';
       }
     }
     if (hasProperty) {
