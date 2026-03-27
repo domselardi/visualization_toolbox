@@ -45,11 +45,6 @@ const _updateView = function (data, config) {
   const currentTheme = SplunkVisualizationUtils.getCurrentTheme();
   const echartsTheme = currentTheme;
   if (echartProps.dataType.toLowerCase() === 'timeline') {
-    const ns = this.getPropertyNamespaceInfo().propertyNamespace;
-    const preBandHeight = parseInt(config[ns + 'timeline_bandHeight']) || 32;
-    const preBandGap = parseInt(config[ns + 'timeline_bandGap']) || 8;
-    const preCategories = [...new Set(data.rows.filter(r => r[0] && r[1] && r[2] && r[3]).map(r => r[2]))];
-    const preHeight = (preBandHeight + preBandGap) * preCategories.length + 210;
     // Ensure our scroll wrapper exists directly around this.el
     let scrollWrapper = this.el.parentElement.querySelector('.hman-scroll-wrapper');
     if (!scrollWrapper) {
@@ -59,10 +54,10 @@ const _updateView = function (data, config) {
       this.el.parentElement.appendChild(scrollWrapper);
       scrollWrapper.appendChild(this.el);
     }
-    this.el.style.height = `${preHeight}px`;
-    tmpChart['instanceByDom'] = echarts.init(this.el, echartsTheme, { height: preHeight });
     tmpChart['_applyBgColor'] = true;
-  } else {
+  }
+  // For timeline, echarts.init is deferred until after buildTimelineOption computes the correct height
+  if (echartProps.dataType.toLowerCase() !== 'timeline') {
     tmpChart['instanceByDom'] = echarts.init(this.el, echartsTheme);
   }
   if(typeof dedicatedMqttClient !== 'undefined') {
@@ -82,6 +77,8 @@ const _updateView = function (data, config) {
   } else if (echartProps.dataType.toLowerCase() == "simpleboxplot") {
     option = this._buildSimpleBoxplotOption(data, config);
   } else if (echartProps.dataType.toLowerCase() == "timeline") {
+    // Init with height:1 as placeholder — we will resize to the correct height after build
+    tmpChart['instanceByDom'] = echarts.init(this.el, echartsTheme, { height: 1 });
     option = this._buildTimelineOption(data, config, tmpChart['instanceByDom'], tmpChart);
     if (tmpChart['visualizationHeight']) {
       const contentHeight = tmpChart['visualizationHeight'];

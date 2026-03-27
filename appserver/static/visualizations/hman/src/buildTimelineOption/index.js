@@ -65,8 +65,7 @@ function renderItemForHour(params, api) {
     // Use api.coord to get the pixel coordinates for the rectangle.
     const pointStart = api.coord([tmpEventStartPoint, yAxisIndexes[yAxisDownIterator]]);
     const pointEnd = api.coord([tmpEventStartPoint + tmpMaximumInitialDrawingSpace, yAxisIndexes[yAxisDownIterator]]);
-    var slotHeight = api.size([0, 1])[1]; // pixel height of one category slot
-    var drawHeight = slotHeight - bandGap;
+    var drawHeight = bandHeight;
     const rectShape = {
       x: pointStart[0],
       y: pointStart[1] - drawHeight / 2,
@@ -98,8 +97,7 @@ function renderItemLogic(params, api) {
   var categoryIndex = api.value(2);
   var start = api.coord([api.value(0), categoryIndex]);
   var end = api.coord([api.value(1), categoryIndex]);
-  var slotHeight = api.size([0, 1])[1]; // pixel height of one category slot
-  var drawHeight = slotHeight - bandGap;
+  var drawHeight = bandHeight;
   var rectShape = echarts.graphic.clipRectByRect(
     {
       x: start[0],
