@@ -1,32 +1,5 @@
 const echarts = require('echarts');
-
-function syncTimelineScrollWrapper(chartHolder, contentHeight) {
-  const scrollWrapper = chartHolder.closest('.hman-scroll-wrapper');
-  if (!scrollWrapper) {
-    return;
-  }
-
-  const wrapperParent = scrollWrapper.parentElement;
-  const resizablePanel = chartHolder.closest('.shared-reportvisualizer.ui-resizable');
-  const availableHeight = wrapperParent && wrapperParent.clientHeight > 0
-    ? wrapperParent.clientHeight
-    : (resizablePanel ? resizablePanel.clientHeight : 0);
-
-  if (availableHeight > 0) {
-    scrollWrapper.style.height = `${availableHeight}px`;
-    scrollWrapper.style.maxHeight = `${availableHeight}px`;
-  } else if (contentHeight) {
-    scrollWrapper.style.height = `${contentHeight}px`;
-    scrollWrapper.style.maxHeight = `${contentHeight}px`;
-  } else {
-    scrollWrapper.style.height = '';
-    scrollWrapper.style.maxHeight = '';
-  }
-
-  scrollWrapper.style.overflowY = 'auto';
-  scrollWrapper.style.overflowX = 'hidden';
-  scrollWrapper.style.minHeight = '0';
-}
+const { scheduleTimelineScrollWrapperSync } = require('../timelineLayoutUtils');
 
 // Override to respond to re-sizing events
 const _reflow = function () {
@@ -38,7 +11,7 @@ const _reflow = function () {
       const theChartHolder = myChart.getDom();
       const contentHeight = currentChartEntry['visualizationHeight'];
       theChartHolder.style.height = `${contentHeight}px`;
-      syncTimelineScrollWrapper(theChartHolder, contentHeight);
+      currentChartEntry['timelineViewportHeight'] = scheduleTimelineScrollWrapperSync(theChartHolder, contentHeight, currentChartEntry['timelineViewportHeight']);
     }
     if (hasProperty) {
       if (currentChartEntry && currentChartEntry['visualizationType'] === 'timeline' && currentChartEntry['visualizationHeight']) {

@@ -1,34 +1,10 @@
 const echarts = require('echarts');
 const SplunkVisualizationUtils = require('api/SplunkVisualizationUtils');
+const {
+  resolveTimelineViewportHeight,
+  scheduleTimelineScrollWrapperSync,
+} = require('../timelineLayoutUtils');
 //const cloneDeep = require('lodash.clonedeep');
-
-function syncTimelineScrollWrapper(chartHolder, contentHeight) {
-  const scrollWrapper = chartHolder.closest('.hman-scroll-wrapper');
-  if (!scrollWrapper) {
-    return;
-  }
-
-  const wrapperParent = scrollWrapper.parentElement;
-  const resizablePanel = chartHolder.closest('.shared-reportvisualizer.ui-resizable');
-  const availableHeight = wrapperParent && wrapperParent.clientHeight > 0
-    ? wrapperParent.clientHeight
-    : (resizablePanel ? resizablePanel.clientHeight : 0);
-
-  if (availableHeight > 0) {
-    scrollWrapper.style.height = `${availableHeight}px`;
-    scrollWrapper.style.maxHeight = `${availableHeight}px`;
-  } else if (contentHeight) {
-    scrollWrapper.style.height = `${contentHeight}px`;
-    scrollWrapper.style.maxHeight = `${contentHeight}px`;
-  } else {
-    scrollWrapper.style.height = '';
-    scrollWrapper.style.maxHeight = '';
-  }
-
-  scrollWrapper.style.overflowY = 'auto';
-  scrollWrapper.style.overflowX = 'hidden';
-  scrollWrapper.style.minHeight = '0';
-}
 
 // Implement updateView to render a visualization.
 // This function is called whenever search results are updated or the visualization format changes. It handles visualization rendering
@@ -73,6 +49,7 @@ const _updateView = function (data, config) {
   const currentTheme = SplunkVisualizationUtils.getCurrentTheme();
   const echartsTheme = currentTheme;
   if (echartProps.dataType.toLowerCase() === 'timeline') {
+    tmpChart['timelineViewportHeight'] = resolveTimelineViewportHeight(this.el, 0, this.el.clientHeight);
     // Ensure our scroll wrapper exists directly around this.el
     let scrollWrapper = this.el.closest('.hman-scroll-wrapper');
     if (!scrollWrapper) {
@@ -113,7 +90,7 @@ const _updateView = function (data, config) {
       const contentHeight = tmpChart['visualizationHeight'];
       this.el.style.height = `${contentHeight}px`;
       tmpChart['instanceByDom'].resize({ height: contentHeight });
-      syncTimelineScrollWrapper(this.el, contentHeight);
+      tmpChart['timelineViewportHeight'] = scheduleTimelineScrollWrapperSync(this.el, contentHeight, tmpChart['timelineViewportHeight']);
     }
   } else if (echartProps.dataType.toLowerCase() == "hourlytimeline") {
     option = this._buildHourlyTimelineOption(data, config, tmpChart['instanceByDom']);
@@ -164,7 +141,7 @@ const _updateView = function (data, config) {
   tmpChart['_option'] = option;
 
   if (tmpChart['visualizationType'] === 'timeline' && tmpChart['visualizationHeight']) {
-    syncTimelineScrollWrapper(this.el, tmpChart['visualizationHeight']);
+    tmpChart['timelineViewportHeight'] = scheduleTimelineScrollWrapperSync(this.el, tmpChart['visualizationHeight'], tmpChart['timelineViewportHeight']);
   }
 
   if (tmpChart['_applyBgColor']) {

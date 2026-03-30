@@ -1,6 +1,7 @@
 const SplunkVisualizationUtils = require('api/SplunkVisualizationUtils');
 const echarts = require('echarts');
 const lodashFind = require('lodash.find');
+const { resolvePixelValue } = require('../timelineLayoutUtils');
 
 let processedData = [];
 let optionFromXmlDashboard = {};
@@ -47,21 +48,6 @@ function resolveOptionalIntegerConfig(value, fallbackValue, propertyName, minimu
   }
 
   console.log(`Warning! The ${propertyName} property must be an integer greater than or equal to ${minimumValue}. The current value is not correct and was replaced with the default value.`);
-  return fallbackValue;
-}
-
-function resolvePixelValue(value, fallbackValue) {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const trimmedValue = value.trim();
-    if (/^\d+(\.\d+)?$/.test(trimmedValue)) {
-      return Number(trimmedValue);
-    }
-  }
-
   return fallbackValue;
 }
 
