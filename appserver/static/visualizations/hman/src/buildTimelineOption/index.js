@@ -36,6 +36,35 @@ function reInitializeDataHolders() {
   bandGap = 8;
 }
 
+function resolveOptionalIntegerConfig(value, fallbackValue, propertyName, minimumValue) {
+  if (value === undefined || value === null || value === '') {
+    return fallbackValue;
+  }
+
+  const parsedValue = Number.parseInt(value, 10);
+  if (Number.isInteger(parsedValue) && parsedValue >= minimumValue) {
+    return parsedValue;
+  }
+
+  console.log(`Warning! The ${propertyName} property must be an integer greater than or equal to ${minimumValue}. The current value is not correct and was replaced with the default value.`);
+  return fallbackValue;
+}
+
+function resolvePixelValue(value, fallbackValue) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmedValue = value.trim();
+    if (/^\d+(\.\d+)?$/.test(trimmedValue)) {
+      return Number(trimmedValue);
+    }
+  }
+
+  return fallbackValue;
+}
+
 function renderItemForHour(params, api) {
   // 1. Initialize the counter on the context object
   if (params.context.counter === undefined) {
@@ -133,8 +162,8 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
   let configOption = config[this.getPropertyNamespaceInfo().propertyNamespace + "option"];
   let useSplunkCategoricalColors = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_useSplunkCategoricalColors"] || 'false';
   let splitByHour = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_splitByHour"];
-  let _private_bandHeight = parseInt(config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandHeight"]);
-  let _private_bandGap = parseInt(config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandGap"]);
+  let _private_bandHeight = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandHeight"];
+  let _private_bandGap = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandGap"];
   if (typeof splitByHour !== 'undefined' && splitByHour === 'true') {
     splitByHour = true;
   } else {
@@ -397,25 +426,18 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
     return null;
   }
 
-  if(Number.isInteger(_private_bandHeight)) {
-    bandHeight = _private_bandHeight;
-  } else {
-    console.log('Warning! The timeline_bandHeight property must be an integer. The current values is not correct and was replaced with a default value.');
-  }
-  if(Number.isInteger(_private_bandGap)) {
-    bandGap = _private_bandGap;
-  } else {
-    console.log('Warning! The timeline_bandGap property must be an integer. The current values is not correct and was replaced with a default value.');
-  }
+  bandHeight = resolveOptionalIntegerConfig(_private_bandHeight, 32, 'timeline_bandHeight', 1);
+  bandGap = resolveOptionalIntegerConfig(_private_bandGap, 8, 'timeline_bandGap', 0);
+
   // Ensure grid property overwrite
-  const visualizationHeight = splitByHour ? ((bandHeight + bandGap) * yAxisListedHours.length) : ((bandHeight + bandGap) * processedCategories.length);
-  tmpChart['visualizationHeight'] = visualizationHeight + 210;
+  const visualizationGridHeight = splitByHour ? ((bandHeight + bandGap) * yAxisListedHours.length) : ((bandHeight + bandGap) * processedCategories.length);
   if (!optionFromXmlDashboard.grid) {
     computedOption.grid = {
       left: 160,
       top: 80,
       bottom: 80,
       right: 20,
+      height: visualizationGridHeight,
       containLabel: false,
     };
   } else {
@@ -425,14 +447,19 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
       top: optionFromXmlDashboard.grid.top ?? 80,
       bottom: optionFromXmlDashboard.grid.bottom ?? 80,
       right: optionFromXmlDashboard.grid.right ?? 20,
+      height: optionFromXmlDashboard.grid.height ?? visualizationGridHeight,
       containLabel: false,
     };
   }
 
+  const gridTop = resolvePixelValue(computedOption.grid.top, 80);
+  const gridBottom = resolvePixelValue(computedOption.grid.bottom, 80);
+  const resolvedGridHeight = resolvePixelValue(computedOption.grid.height, visualizationGridHeight);
+  tmpChart['visualizationHeight'] = gridTop + resolvedGridHeight + gridBottom + 50;
+
   // Ensure dataZoom property overwrite
   if (!splitByHour && optionFromXmlDashboard.dataZoom) {
-    const gridBottom = (computedOption.grid && computedOption.grid.bottom) ? computedOption.grid.bottom : 50;
-    const dataZoomTopPosition = 80 + visualizationHeight + gridBottom; // position dataZoom below the grid and xAxis labels (top offset + grid height + bottom margin)
+    const dataZoomTopPosition = gridTop + resolvedGridHeight + gridBottom; // position dataZoom below the grid and xAxis labels (top offset + grid height + bottom margin)
     const defaultSliderDataZoom = {
       type: 'slider',
       start: 0,

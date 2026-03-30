@@ -1,4 +1,33 @@
 const echarts = require('echarts');
+
+function syncTimelineScrollWrapper(chartHolder, contentHeight) {
+  const scrollWrapper = chartHolder.closest('.hman-scroll-wrapper');
+  if (!scrollWrapper) {
+    return;
+  }
+
+  const wrapperParent = scrollWrapper.parentElement;
+  const resizablePanel = chartHolder.closest('.shared-reportvisualizer.ui-resizable');
+  const availableHeight = wrapperParent && wrapperParent.clientHeight > 0
+    ? wrapperParent.clientHeight
+    : (resizablePanel ? resizablePanel.clientHeight : 0);
+
+  if (availableHeight > 0) {
+    scrollWrapper.style.height = `${availableHeight}px`;
+    scrollWrapper.style.maxHeight = `${availableHeight}px`;
+  } else if (contentHeight) {
+    scrollWrapper.style.height = `${contentHeight}px`;
+    scrollWrapper.style.maxHeight = `${contentHeight}px`;
+  } else {
+    scrollWrapper.style.height = '';
+    scrollWrapper.style.maxHeight = '';
+  }
+
+  scrollWrapper.style.overflowY = 'auto';
+  scrollWrapper.style.overflowX = 'hidden';
+  scrollWrapper.style.minHeight = '0';
+}
+
 // Override to respond to re-sizing events
 const _reflow = function () {
   var myChart = echarts.getInstanceByDom(this.el);
@@ -9,16 +38,14 @@ const _reflow = function () {
       const theChartHolder = myChart.getDom();
       const contentHeight = currentChartEntry['visualizationHeight'];
       theChartHolder.style.height = `${contentHeight}px`;
-      const scrollWrapper = theChartHolder.closest('.hman-scroll-wrapper');
-      const resizablePanel = theChartHolder.closest('.shared-reportvisualizer.ui-resizable');
-      if (scrollWrapper && resizablePanel) {
-        const panelHeight = resizablePanel.clientHeight;
-        scrollWrapper.style.height = `${panelHeight}px`;
-        scrollWrapper.style.overflowY = panelHeight < contentHeight ? 'scroll' : 'hidden';
-      }
+      syncTimelineScrollWrapper(theChartHolder, contentHeight);
     }
     if (hasProperty) {
-      myChart.resize();
+      if (currentChartEntry && currentChartEntry['visualizationType'] === 'timeline' && currentChartEntry['visualizationHeight']) {
+        myChart.resize({ height: currentChartEntry['visualizationHeight'] });
+      } else {
+        myChart.resize();
+      }
     }
   }
 }
