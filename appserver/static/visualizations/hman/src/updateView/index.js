@@ -129,11 +129,10 @@ const _updateView = function (data, config) {
     }
   }
 
-  // Overwrite default eCharts v6 legend position
-  if (typeof option.legend === 'undefined' || (typeof option.legend.top === 'undefined' && typeof option.legend.bottom === 'undefined')) {
-    if (typeof option.legend === 'undefined') {
-      option.legend = {};
-    }
+  // Hide legend if not specified; otherwise fix default eCharts v6 position
+  if (typeof option.legend === 'undefined') {
+    option.legend = { show: false };
+  } else if (typeof option.legend.top === 'undefined' && typeof option.legend.bottom === 'undefined') {
     option.legend.top = 0;
   }
 
