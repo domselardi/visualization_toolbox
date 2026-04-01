@@ -90,7 +90,7 @@ function renderItemForHour(params, api) {
     const rectDrawing = {
       type: 'rect',
       shape: rectShape,
-      style: api.style(),
+      style: { fill: api.visual('color') },
     };
     rectangleDrawingsArray.push(rectDrawing);
     tmpEventStartPoint = 0; // Start from zero on the next row
@@ -132,8 +132,7 @@ function renderItemLogic(params, api) {
       type: 'rect',
       transition: ['shape'],
       shape: rectShape,
-      style: api.style(),
-      styleEmphasis: api.styleEmphasis(),
+      style: { fill: api.visual('color') },
     }
   );
 }
