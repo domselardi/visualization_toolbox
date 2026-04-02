@@ -1,5 +1,28 @@
 const echarts = require('echarts');
-const { scheduleTimelineScrollWrapperSync } = require('../timelineLayoutUtils');
+
+function attachResizeListener(element, config) {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName === 'class') {
+        const isResizing = element.classList.contains('ui-resizable-resizing');
+        const target = mutation.target;
+        if (!isResizing) {
+          if(target.getBoundingClientRect().height < config.theChartHeight){
+            target.style.overflowY = 'auto';
+            target.style.overflowX = 'hidden';
+          } else {
+            target.style.overflowY = 'hidden';
+            target.style.overflowX = 'hidden';
+          }
+        }
+      }
+    });
+  });
+  observer.observe(element, { 
+    attributes: true, 
+    attributeFilter: ['class'] 
+  });
+}
 
 // Override to respond to re-sizing events
 const _reflow = function () {
@@ -9,16 +32,12 @@ const _reflow = function () {
     const currentChartEntry = this.scopedVariables['_renderedEchartsArray'].find(o => o.instanceByDom === myChart);
     if(currentChartEntry && currentChartEntry['visualizationType'] === 'timeline') {
       const theChartHolder = myChart.getDom();
-      const contentHeight = currentChartEntry['visualizationHeight'];
-      theChartHolder.style.height = `${contentHeight}px`;
-      currentChartEntry['timelineViewportHeight'] = scheduleTimelineScrollWrapperSync(theChartHolder, contentHeight, currentChartEntry['timelineViewportHeight']);
+      const theChartHeight = myChart.getHeight();
+      const scopedSplunkEchartsPanel = theChartHolder.parentElement.parentElement.parentElement.parentElement.parentElement;
+      attachResizeListener(scopedSplunkEchartsPanel, { theChartHeight});
     }
     if (hasProperty) {
-      if (currentChartEntry && currentChartEntry['visualizationType'] === 'timeline' && currentChartEntry['visualizationHeight']) {
-        myChart.resize({ height: currentChartEntry['visualizationHeight'] });
-      } else {
-        myChart.resize();
-      }
+      myChart.resize();
     }
   }
 }

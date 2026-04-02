@@ -1,10 +1,5 @@
 const echarts = require('echarts');
 const SplunkVisualizationUtils = require('api/SplunkVisualizationUtils');
-const {
-  resolveTimelineViewportHeight,
-  scheduleTimelineScrollWrapperSync,
-} = require('../timelineLayoutUtils');
-//const cloneDeep = require('lodash.clonedeep');
 
 // Implement updateView to render a visualization.
 // This function is called whenever search results are updated or the visualization format changes. It handles visualization rendering
@@ -49,17 +44,6 @@ const _updateView = function (data, config) {
   const currentTheme = SplunkVisualizationUtils.getCurrentTheme();
   const echartsTheme = currentTheme;
   if (echartProps.dataType.toLowerCase() === 'timeline') {
-    tmpChart['timelineViewportHeight'] = resolveTimelineViewportHeight(this.el, 0, this.el.clientHeight);
-    // Ensure our scroll wrapper exists directly around this.el
-    let scrollWrapper = this.el.closest('.hman-scroll-wrapper');
-    if (!scrollWrapper) {
-      const wrapperParent = this.el.parentElement;
-      scrollWrapper = document.createElement('div');
-      scrollWrapper.className = 'hman-scroll-wrapper';
-      scrollWrapper.style.cssText = 'width:100%; overflow-x:hidden; overflow-y:auto; min-height:0;';
-      wrapperParent.appendChild(scrollWrapper);
-      scrollWrapper.appendChild(this.el);
-    }
     tmpChart['_applyBgColor'] = true;
   }
   // For timeline, echarts.init is deferred until after buildTimelineOption computes the correct height
@@ -90,7 +74,6 @@ const _updateView = function (data, config) {
       const contentHeight = tmpChart['visualizationHeight'];
       this.el.style.height = `${contentHeight}px`;
       tmpChart['instanceByDom'].resize({ height: contentHeight });
-      tmpChart['timelineViewportHeight'] = scheduleTimelineScrollWrapperSync(this.el, contentHeight, tmpChart['timelineViewportHeight']);
     }
   } else if (echartProps.dataType.toLowerCase() == "hourlytimeline") {
     option = this._buildHourlyTimelineOption(data, config, tmpChart['instanceByDom']);
@@ -138,10 +121,6 @@ const _updateView = function (data, config) {
 
   tmpChart['instanceByDom'].setOption(option);
   tmpChart['_option'] = option;
-
-  if (tmpChart['visualizationType'] === 'timeline' && tmpChart['visualizationHeight']) {
-    tmpChart['timelineViewportHeight'] = scheduleTimelineScrollWrapperSync(this.el, tmpChart['visualizationHeight'], tmpChart['timelineViewportHeight']);
-  }
 
   if (tmpChart['_applyBgColor']) {
     const resizablePanelForBg = this.el.closest('.shared-reportvisualizer.ui-resizable');

@@ -3,38 +3,9 @@ const echarts = require('echarts');
 const lodashFind = require('lodash.find');
 const { resolvePixelValue } = require('../timelineLayoutUtils');
 
-let processedData = [];
-let optionFromXmlDashboard = {};
-let processedLegends = [];
-let manuallyAddedLegends = [];
-let manuallySelectedLegends = {};
-let processedCategories = [];
 let tmpLocaleOption = 'en-GB';
-let xAxisDataMinValue = '';
-let xAxisDataMaxValue = '';
-let xAxisStartDates = [];
-let yAxisListedHours = [];
-let hourlyIntervals = [];
-let bandHeight = 32;
-let bandGap = 8;
 if (typeof window._i18n_locale !== 'undefined' && typeof window._i18n_locale.locale_name !== 'undefined') {
   tmpLocaleOption = window._i18n_locale.locale_name.replace('_', '-');
-}
-
-function reInitializeDataHolders() {
-  processedData = [];
-  optionFromXmlDashboard = {};
-  processedLegends = [];
-  manuallyAddedLegends = [];
-  manuallySelectedLegends = {};
-  processedCategories = [];
-  xAxisDataMinValue = '';
-  xAxisDataMaxValue = '';
-  xAxisStartDates = [];
-  yAxisListedHours = [];
-  hourlyIntervals = [];
-  bandHeight = 32;
-  bandGap = 8;
 }
 
 function resolveOptionalIntegerConfig(value, fallbackValue, propertyName, minimumValue) {
@@ -51,94 +22,95 @@ function resolveOptionalIntegerConfig(value, fallbackValue, propertyName, minimu
   return fallbackValue;
 }
 
-function renderItemForHour(params, api) {
-  // 1. Initialize the counter on the context object
-  if (params.context.counter === undefined) {
-    params.context.counter = 0;
-  }
-
-  // Use params.dataIndex to get the full data item
-  const eventItemData = processedData[params.dataIndex];
-  if (!eventItemData) {
-    return;
-  }
-
-  // Get the event start and end timestamps in seconds
-  let tmpEventDurationInSeconds = eventItemData.eventDurationInSeconds;
-  // Get the corresponding yAxisIndexes from the matchedHourlyIntervals the event belongs to
-  const yAxisIndexes = eventItemData.matchedHourlyIntervals;
-  const tmpStartDate = new Date(eventItemData.value[0])
-  const tmpEventStartMinute = new Intl.DateTimeFormat(tmpLocaleOption, {
-    minute: "2-digit",
-  }).format(tmpStartDate);
-  let tmpEventStartPoint = tmpEventStartMinute * 60;
-  let tmpMaximumInitialDrawingSpace = 3600 - (tmpEventStartMinute * 60);
-  let yAxisDownIterator = 0;
-  let rectangleDrawingsArray = [];
-  while (tmpEventDurationInSeconds > 0) {
-    // Get the start point for drawing the rectangles
-    // Use api.coord to get the pixel coordinates for the rectangle.
-    const pointStart = api.coord([tmpEventStartPoint, yAxisIndexes[yAxisDownIterator]]);
-    const pointEnd = api.coord([tmpEventStartPoint + tmpMaximumInitialDrawingSpace, yAxisIndexes[yAxisDownIterator]]);
-    var drawHeight = bandHeight;
-    const rectShape = {
-      x: pointStart[0],
-      y: pointStart[1] - drawHeight / 2,
-      width: pointEnd[0] - pointStart[0],
-      height: drawHeight,
-    };
-    const rectDrawing = {
-      type: 'rect',
-      shape: rectShape,
-      style: { fill: api.visual('color') },
-    };
-    rectangleDrawingsArray.push(rectDrawing);
-    tmpEventStartPoint = 0; // Start from zero on the next row
-    tmpEventDurationInSeconds = tmpEventDurationInSeconds - tmpMaximumInitialDrawingSpace;
-    tmpMaximumInitialDrawingSpace = tmpEventDurationInSeconds;
-    if (tmpMaximumInitialDrawingSpace > 3600) {
-      tmpMaximumInitialDrawingSpace = 3600; // Restrict the max nr of drawed seconds per line
+function makeRenderItemForHour(bandHeight, processedData) {
+  return function renderItemForHour(params, api) {
+    // 1. Initialize the counter on the context object
+    if (params.context.counter === undefined) {
+      params.context.counter = 0;
     }
-    yAxisDownIterator++
-  }
-  params.context.counter++;
-  return {
-    type: 'group',
-    children: rectangleDrawingsArray,
+
+    // Use params.dataIndex to get the full data item
+    const eventItemData = processedData[params.dataIndex];
+    if (!eventItemData) {
+      return;
+    }
+
+    // Get the event start and end timestamps in seconds
+    let tmpEventDurationInSeconds = eventItemData.eventDurationInSeconds;
+    // Get the corresponding yAxisIndexes from the matchedHourlyIntervals the event belongs to
+    const yAxisIndexes = eventItemData.matchedHourlyIntervals;
+    const tmpStartDate = new Date(eventItemData.value[0])
+    const tmpEventStartMinute = new Intl.DateTimeFormat(tmpLocaleOption, {
+      minute: "2-digit",
+    }).format(tmpStartDate);
+    let tmpEventStartPoint = tmpEventStartMinute * 60;
+    let tmpMaximumInitialDrawingSpace = 3600 - (tmpEventStartMinute * 60);
+    let yAxisDownIterator = 0;
+    let rectangleDrawingsArray = [];
+    while (tmpEventDurationInSeconds > 0) {
+      // Get the start point for drawing the rectangles
+      // Use api.coord to get the pixel coordinates for the rectangle.
+      const pointStart = api.coord([tmpEventStartPoint, yAxisIndexes[yAxisDownIterator]]);
+      const pointEnd = api.coord([tmpEventStartPoint + tmpMaximumInitialDrawingSpace, yAxisIndexes[yAxisDownIterator]]);
+      const rectShape = {
+        x: pointStart[0],
+        y: pointStart[1] - bandHeight / 2,
+        width: pointEnd[0] - pointStart[0],
+        height: bandHeight,
+      };
+      const rectDrawing = {
+        type: 'rect',
+        shape: rectShape,
+        style: { fill: api.visual('color') },
+      };
+      rectangleDrawingsArray.push(rectDrawing);
+      tmpEventStartPoint = 0; // Start from zero on the next row
+      tmpEventDurationInSeconds = tmpEventDurationInSeconds - tmpMaximumInitialDrawingSpace;
+      tmpMaximumInitialDrawingSpace = tmpEventDurationInSeconds;
+      if (tmpMaximumInitialDrawingSpace > 3600) {
+        tmpMaximumInitialDrawingSpace = 3600; // Restrict the max nr of drawed seconds per line
+      }
+      yAxisDownIterator++
+    }
+    params.context.counter++;
+    return {
+      type: 'group',
+      children: rectangleDrawingsArray,
+    };
   };
 }
 
-function renderItemLogic(params, api) {
-  var categoryIndex = api.value(2);
-  var start = api.coord([api.value(0), categoryIndex]);
-  var end = api.coord([api.value(1), categoryIndex]);
-  var drawHeight = bandHeight;
-  var rectShape = echarts.graphic.clipRectByRect(
-    {
-      x: start[0],
-      y: start[1] - drawHeight / 2,
-      width: end[0] - start[0],
-      height: drawHeight
-    },
-    {
-      x: params.coordSys.x,
-      y: params.coordSys.y,
-      width: params.coordSys.width,
-      height: params.coordSys.height
-    }
-  );
-  return (
-    rectShape && {
-      type: 'rect',
-      transition: ['shape'],
-      shape: rectShape,
-      style: { fill: api.visual('color') },
-    }
-  );
+function makeRenderItemLogic(bandHeight) {
+  return function renderItemLogic(params, api) {
+    var categoryIndex = api.value(2);
+    var start = api.coord([api.value(0), categoryIndex]);
+    var end = api.coord([api.value(1), categoryIndex]);
+    var rectShape = echarts.graphic.clipRectByRect(
+      {
+        x: start[0],
+        y: start[1] - bandHeight / 2,
+        width: end[0] - start[0],
+        height: bandHeight
+      },
+      {
+        x: params.coordSys.x,
+        y: params.coordSys.y,
+        width: params.coordSys.width,
+        height: params.coordSys.height
+      }
+    );
+    return (
+      rectShape && {
+        type: 'rect',
+        transition: ['shape'],
+        shape: rectShape,
+        style: { fill: api.visual('color') },
+      }
+    );
+  };
 }
 
 const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart) {
-  reInitializeDataHolders();
   const currentTheme = SplunkVisualizationUtils.getCurrentTheme();
   const genericTextColor = currentTheme === 'dark' ? '#fff' : '#000';
   // Start creating the annotated computedOption object that will be passed to echart instance
@@ -155,11 +127,11 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
     splitByHour = false;
   }
 
-  optionFromXmlDashboard = this._parseOption(configOption);
+  const optionFromXmlDashboard = this._parseOption(configOption);
   const _setCustomTokens = this._setCustomTokens;
   const _setSplunkMessages = this._setSplunkMessages;
 
-  // Extract 
+  // Extract
   let computedDimensions = data.fields.map(tmpField => tmpField.name);
   let allSeriesData = [];
   let deselectedLegends = []; // Array to track deselected legends
@@ -207,6 +179,17 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
       value !== "" && value !== null && value !== undefined
     )
   );
+
+  let processedData = [];
+  let processedLegends = [];
+  let manuallyAddedLegends = [];
+  let manuallySelectedLegends = {};
+  let processedCategories = [];
+  let xAxisDataMinValue = '';
+  let xAxisDataMaxValue = '';
+  let xAxisStartDates = [];
+  let yAxisListedHours = [];
+  let hourlyIntervals = [];
 
   if (useSplunkCategoricalColors.toLowerCase() === 'true') {
     // Get all unique categories from cleanDataRows
@@ -296,8 +279,7 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
 
     let rawEventsStartTime = this.scopedVariables['timeRange']['earliest'];
     let rawEventsEndTime = this.scopedVariables['timeRange']['latest'];
-    
-    hourlyIntervals = [];
+
     yAxisListedHours = this._sharedFunctions.getHourlyIntervals(rawEventsStartTime, rawEventsEndTime);
     if(yAxisListedHours.length > 25) {
       _setSplunkMessages("error", "The time range is too large. This visualization is adapted only for maximum 24 hourly intervals. The rest of the data has been trimmed. Try removing splitByHour parameter?");
@@ -411,8 +393,8 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
     return null;
   }
 
-  bandHeight = resolveOptionalIntegerConfig(_private_bandHeight, 32, 'timeline_bandHeight', 1);
-  bandGap = resolveOptionalIntegerConfig(_private_bandGap, 8, 'timeline_bandGap', 0);
+  const bandHeight = resolveOptionalIntegerConfig(_private_bandHeight, 32, 'timeline_bandHeight', 1);
+  const bandGap = resolveOptionalIntegerConfig(_private_bandGap, 8, 'timeline_bandGap', 0);
 
   // Ensure grid property overwrite
   const visualizationGridHeight = splitByHour ? ((bandHeight + bandGap) * yAxisListedHours.length) : ((bandHeight + bandGap) * processedCategories.length);
@@ -440,11 +422,10 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
   const gridTop = resolvePixelValue(computedOption.grid.top, 80);
   const gridBottom = resolvePixelValue(computedOption.grid.bottom, 80);
   const resolvedGridHeight = resolvePixelValue(computedOption.grid.height, visualizationGridHeight);
-  tmpChart['visualizationHeight'] = gridTop + resolvedGridHeight + gridBottom + 50;
 
   // Ensure dataZoom property overwrite
   if (!splitByHour && optionFromXmlDashboard.dataZoom) {
-    const dataZoomTopPosition = gridTop + resolvedGridHeight + gridBottom; // position dataZoom below the grid and xAxis labels (top offset + grid height + bottom margin)
+    const dataZoomTopPosition = gridTop + resolvedGridHeight + 30; // position dataZoom below the grid and xAxis labels (top offset + grid height + ~30px for axis labels)
     const defaultSliderDataZoom = {
       type: 'slider',
       start: 0,
@@ -464,6 +445,26 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
       }
       return { ...userDataZoom, filterMode: 'none' };
     });
+  }
+
+  // Compute canvas height to fit all declared elements exactly.
+  // When dataZoom is present, the bottommost element is the slider:
+  //   its top = gridTop + resolvedGridHeight + 30 (axis label gap)
+  //   eCharts default slider height = 30px; add 10px bottom margin
+  // Without dataZoom, gridBottom already reserves space for axis labels below the grid.
+  if (computedOption.dataZoom && computedOption.dataZoom.some(dz => dz.type === 'slider' || !dz.type)) {
+    const sliderTop = gridTop + resolvedGridHeight + 30;
+    const sliderHeight = computedOption.dataZoom.reduce((maxBottom, dz) => {
+      if (dz.type === 'slider' || !dz.type) {
+        const dzTop = resolvePixelValue(dz.top, sliderTop);
+        const dzHeight = resolvePixelValue(dz.height, 30);
+        return Math.max(maxBottom, dzTop + dzHeight);
+      }
+      return maxBottom;
+    }, 0);
+    tmpChart['visualizationHeight'] = sliderHeight + 10;
+  } else {
+    tmpChart['visualizationHeight'] = gridTop + resolvedGridHeight + gridBottom;
   }
 
   // Ensure xAxis property overwrite
@@ -543,7 +544,7 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
   computedOption.series = [{
     id: 'timelineData',
     type: 'custom',
-    renderItem: splitByHour ? renderItemForHour : renderItemLogic,
+    renderItem: splitByHour ? makeRenderItemForHour(bandHeight, processedData) : makeRenderItemLogic(bandHeight),
     encode: {
       x: [computedDimensions[configStartTimeDataIndexBinding], computedDimensions[configEndTimeDataIndexBinding]], //start_time, end_time
       y: computedDimensions[configLegendsDataIndexBinding], //category
