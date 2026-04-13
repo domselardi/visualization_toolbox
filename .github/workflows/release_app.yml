@@ -1,6 +1,9 @@
 name: ReleaseApp
 on:
   workflow_dispatch:
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -21,8 +24,6 @@ jobs:
       uses: actions/setup-node@v4.4.0
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: './appserver/static/visualizations/hman/package-lock.json'
     # Write app version and workflow id to variables for later usage
     - name: Version information
       id: version_information
@@ -40,8 +41,6 @@ jobs:
            tar_name="visualization_toolbox-$app_version.tar.gz"
            echo "Tar.gz name: $tar_name"
            echo "tar_name=$tar_name" >> $GITHUB_OUTPUT
-    - name: upgrade version
-      run: npm install npm@latest -g
     - name: NPM install
       run: |
            cd appserver/static/visualizations/hman
