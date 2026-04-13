@@ -32,11 +32,13 @@ const _reflow = function () {
     const currentChartEntry = this.scopedVariables['_renderedEchartsArray'].find(o => o.instanceByDom === myChart);
     if(currentChartEntry && currentChartEntry['visualizationType'] === 'timeline') {
       const theChartHolder = myChart.getDom();
-      const theChartHeight = myChart.getHeight();
       const scopedSplunkEchartsPanel = theChartHolder.parentElement.parentElement.parentElement.parentElement.parentElement;
-      attachResizeListener(scopedSplunkEchartsPanel, { theChartHeight});
-    }
-    if (hasProperty) {
+      const theChartHeight = currentChartEntry['visualizationHeight'] || myChart.getHeight();
+      attachResizeListener(scopedSplunkEchartsPanel, { theChartHeight });
+      if (hasProperty) {
+        myChart.resize({ height: theChartHeight });
+      }
+    } else if (hasProperty) {
       myChart.resize();
     }
   }
