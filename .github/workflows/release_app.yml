@@ -40,7 +40,9 @@ jobs:
            tar_name="visualization_toolbox-$app_version.tar.gz"
            echo "Tar.gz name: $tar_name"
            echo "tar_name=$tar_name" >> $GITHUB_OUTPUT
-    - name: NPM install 
+    - name: upgrade version
+      run: npm install npm@latest -g
+    - name: NPM install
       run: |
            cd appserver/static/visualizations/hman
            npm install
@@ -48,8 +50,6 @@ jobs:
       run: |
         cd appserver/static/visualizations/hman
         npm run build
-    - name: upgrade version  
-      run: npm install npm@latest -g  
       
     - name: npm update
       run: |
