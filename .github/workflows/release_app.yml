@@ -1,6 +1,9 @@
 name: ReleaseApp
 on:
   workflow_dispatch:
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -15,14 +18,12 @@ jobs:
       slim_package_name: ${{ steps.package_app.outputs.slim_package_name }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
-    
+      uses: actions/checkout@v4.2.2
+
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v4.4.0
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: './appserver/static/visualizations/hman/package-lock.json'
     # Write app version and workflow id to variables for later usage
     - name: Version information
       id: version_information
@@ -40,7 +41,7 @@ jobs:
            tar_name="visualization_toolbox-$app_version.tar.gz"
            echo "Tar.gz name: $tar_name"
            echo "tar_name=$tar_name" >> $GITHUB_OUTPUT
-    - name: NPM install 
+    - name: NPM install
       run: |
            cd appserver/static/visualizations/hman
            npm install
@@ -48,8 +49,6 @@ jobs:
       run: |
         cd appserver/static/visualizations/hman
         npm run build
-    - name: upgrade version  
-      run: npm install npm@latest -g  
       
     - name: npm update
       run: |
@@ -72,7 +71,7 @@ jobs:
       run: |
           sed -i -e "s/replacebuild/${{ steps.version_information.outputs.build_number }}/g" default/app.conf  
     - name: install python 3.9
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.6.0
       with: 
        python-version: '3.9'     
     - name: install packaging toolkit CLI
