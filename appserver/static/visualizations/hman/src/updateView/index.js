@@ -1,6 +1,5 @@
 const echarts = require('echarts');
 const SplunkVisualizationUtils = require('api/SplunkVisualizationUtils');
-//const cloneDeep = require('lodash.clonedeep');
 
 // Implement updateView to render a visualization.
 // This function is called whenever search results are updated or the visualization format changes. It handles visualization rendering
@@ -45,19 +44,10 @@ const _updateView = function (data, config) {
   const currentTheme = SplunkVisualizationUtils.getCurrentTheme();
   const echartsTheme = currentTheme;
   if (echartProps.dataType.toLowerCase() === 'timeline') {
-    const ns = this.getPropertyNamespaceInfo().propertyNamespace;
-    const preBandHeight = parseInt(config[ns + 'timeline_bandHeight']) || 32;
-    const preBandGap = parseInt(config[ns + 'timeline_bandGap']) || 8;
-    const preCategories = [...new Set(data.rows.map(r => r[2]))];
-    const preHeight = (preBandHeight + preBandGap) * preCategories.length + 210;
-    this.el.parentElement.style.height = `${preHeight}px`;
-    const resizablePanel = this.el.closest('.shared-reportvisualizer.ui-resizable');
-    if (resizablePanel) {
-      resizablePanel.style.overflowY = resizablePanel.clientHeight < preHeight ? 'scroll' : 'hidden';
-    }
-    tmpChart['instanceByDom'] = echarts.init(this.el, echartsTheme, { height: preHeight });
     tmpChart['_applyBgColor'] = true;
-  } else {
+  }
+  // For timeline, echarts.init is deferred until after buildTimelineOption computes the correct height
+  if (echartProps.dataType.toLowerCase() !== 'timeline') {
     tmpChart['instanceByDom'] = echarts.init(this.el, echartsTheme);
   }
   if(typeof dedicatedMqttClient !== 'undefined') {
@@ -77,7 +67,14 @@ const _updateView = function (data, config) {
   } else if (echartProps.dataType.toLowerCase() == "simpleboxplot") {
     option = this._buildSimpleBoxplotOption(data, config);
   } else if (echartProps.dataType.toLowerCase() == "timeline") {
+    // Init with height:1 as placeholder — we will resize to the correct height after build
+    tmpChart['instanceByDom'] = echarts.init(this.el, echartsTheme, { height: 1 });
     option = this._buildTimelineOption(data, config, tmpChart['instanceByDom'], tmpChart);
+    if (tmpChart['visualizationHeight']) {
+      const contentHeight = tmpChart['visualizationHeight'];
+      this.el.style.height = `${contentHeight}px`;
+      tmpChart['instanceByDom'].resize({ height: contentHeight });
+    }
   } else if (echartProps.dataType.toLowerCase() == "hourlytimeline") {
     option = this._buildHourlyTimelineOption(data, config, tmpChart['instanceByDom']);
   }
@@ -115,11 +112,10 @@ const _updateView = function (data, config) {
     }
   }
 
-  // Overwrite default eCharts v6 legend position
-  if (typeof option.legend === 'undefined' || (typeof option.legend.top === 'undefined' && typeof option.legend.bottom === 'undefined')) {
-    if (typeof option.legend === 'undefined') {
-      option.legend = {};
-    }
+  // Hide legend if not specified; otherwise fix default eCharts v6 position
+  if (typeof option.legend === 'undefined') {
+    option.legend = { show: false };
+  } else if (typeof option.legend.top === 'undefined' && typeof option.legend.bottom === 'undefined') {
     option.legend.top = 0;
   }
 

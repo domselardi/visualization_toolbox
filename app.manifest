@@ -5,7 +5,7 @@
     "id": {
       "group": null,
       "name": "visualization_toolbox",
-      "version": "0.4.6"
+      "version": "0.4.7-rc6"
     },
     "author": [
       {

@@ -1,6 +1,6 @@
 {
   "name": "spc",
-  "version": "1.0.0",
+  "version": "0.4.7-rc6",
   "description": "ECharts visualization for splunk",
   "main": "visualization.js",
   "scripts": {
