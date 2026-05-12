@@ -122,6 +122,12 @@ const _updateView = function (data, config) {
   tmpChart['instanceByDom'].setOption(option);
   tmpChart['_option'] = option;
 
+  // A data change (e.g. dashboard filters feeding more rows) rebuilds the chart here but does not
+  // trigger reflow, so re-run it to re-apply the timeline canvas height and the panel scroll state.
+  if (tmpChart['visualizationType'] === 'timeline') {
+    try { this.reflow(); } catch (e) { console.log('reflow after timeline render failed', e); }
+  }
+
   if (tmpChart['_applyBgColor']) {
     const resizablePanelForBg = this.el.closest('.shared-reportvisualizer.ui-resizable');
     if (resizablePanelForBg) {
