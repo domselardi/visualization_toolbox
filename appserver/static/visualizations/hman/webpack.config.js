@@ -8,6 +8,7 @@ module.exports = {
         modules: [`${__dirname}/node_modules`]
     },
     mode: 'development',
+    devtool: 'source-map',
     output: {
         path: `${__dirname}`,
         filename: 'visualization.js',

@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .claude
+*.js.map
 
 # Local files
 metadata
@@ -131,3 +132,4 @@ lookups/timeline_by_hour_10_jan_2025.csv
 lookups/two_machines.csv
 lookups/timeline_by_hour_data.csv
 lookups/timeline_by_machine.csv
+.codex

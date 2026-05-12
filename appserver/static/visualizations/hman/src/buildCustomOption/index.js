@@ -201,10 +201,10 @@ const _buildCustomOption = function (data, config) {
         var highPoint = api.coord([xValue, api.value(1)]);
         var lowPoint = api.coord([xValue, api.value(2)]);
         var halfWidth = api.size([1, 0])[0] * 0.1;
-        var style = api.style({
+        var style = {
           stroke: api.visual('color'),
           fill: null
-        });
+        };
 
         return {
           type: 'group',
