@@ -1,0 +1,245 @@
+<dashboard version="1.1" stylesheet="tutorial.css">
+  <label>10. Boxplot — Multi-Series QC Analysis</label>
+  <row>
+    <panel>
+      <html>
+        <h1>Boxplot (multi-series)</h1>
+        <p>
+          The <b>Boxplot</b> dataType (distinct from <b>SimpleBoxplot</b>) renders multiple grouped
+          boxplot series side-by-side on the same x-axis. Use it when you need to compare
+          distributions across two dimensions simultaneously — for example, machine vs. shift, or
+          product line vs. day of week.
+        </p>
+        <p>
+          Activate it with <code>dataType=Boxplot</code>.
+        </p>
+
+        <hr />
+
+        <h1>Required data format — transposed table</h1>
+        <p>
+          Unlike SimpleBoxplot, this builder consumes a <b>transposed</b> result table where
+          <b>each column is one boxplot</b> and <b>each row is one property</b>.
+          The table must have exactly <b>8 rows</b> (plus optional outlier rows) and
+          <b>N columns</b> (one per box):
+        </p>
+        <table class="mytableclass">
+          <tr><td><b>Row index</b></td><td><b>Content of each cell (one cell per box)</b></td></tr>
+          <tr><td>0</td><td>Minimum value</td></tr>
+          <tr><td>1</td><td>Q1 (25th percentile)</td></tr>
+          <tr><td>2</td><td>Median</td></tr>
+          <tr><td>3</td><td>Q3 (75th percentile)</td></tr>
+          <tr><td>4</td><td>Maximum value</td></tr>
+          <tr><td>5</td><td>Category name — used as the series/legend label</td></tr>
+          <tr><td>6</td><td>X-axis group label — used as the xAxis tick label</td></tr>
+          <tr><td>7</td><td>Number of distinct categories (same value repeated in every cell)</td></tr>
+        </table>
+        <p>
+          The builder deduplicates row 5 to create the series list and row 6 to build the xAxis.
+          Boxes with the same category name form one series; boxes with the same xAxis label are
+          grouped together under that tick.
+        </p>
+
+        <hr />
+
+        <h1>Constructing the transposed table in Splunk</h1>
+        <p>
+          Because Splunk normally produces one-row-per-observation tables, you must build this
+          transposed structure explicitly. The cleanest approach uses <code>| append</code> to
+          stack exactly 8 result rows and <code>| sort seq</code> to guarantee row order.
+        </p>
+        <p>
+          The factory example below compares component thickness (mm) measured on two CNC machines
+          across two production shifts (Morning and Afternoon). There are 4 boxes in total:
+          CNC-01 Morning, CNC-01 Afternoon, CNC-02 Morning, CNC-02 Afternoon.
+        </p>
+<pre><code><![CDATA[| makeresults count=1 | eval seq=1, c0="5.72", c1="5.68", c2="5.78", c3="5.75"
+| append [| makeresults count=1 | eval seq=2, c0="5.76", c1="5.73", c2="5.82", c3="5.79"]
+| append [| makeresults count=1 | eval seq=3, c0="5.79", c1="5.76", c2="5.85", c3="5.83"]
+| append [| makeresults count=1 | eval seq=4, c0="5.83", c1="5.80", c2="5.89", c3="5.87"]
+| append [| makeresults count=1 | eval seq=5, c0="5.89", c1="5.86", c2="5.96", c3="5.93"]
+| append [| makeresults count=1 | eval seq=6, c0="Morning",  c1="Afternoon", c2="Morning",  c3="Afternoon"]
+| append [| makeresults count=1 | eval seq=7, c0="CNC-01",   c1="CNC-01",   c2="CNC-02",   c3="CNC-02"]
+| append [| makeresults count=1 | eval seq=8, c0="2",        c1="2",        c2="2",        c3="2"]
+| sort seq
+| table c0 c1 c2 c3]]></code></pre>
+
+        <p>
+          The <code>| sort seq</code> is essential — it guarantees that min is always row 0 and
+          the category count is always row 7, regardless of how Splunk internally orders same-time
+          <code>makeresults</code> events. The final <code>| table c0 c1 c2 c3</code> drops the
+          <code>seq</code> and internal <code>_time</code> fields, leaving only the 4 data columns.
+        </p>
+        <p>
+          Mapping the columns to the expected layout:
+        </p>
+        <table class="mytableclass">
+          <tr>
+            <td><b>Row</b></td>
+            <td><b>c0 (CNC-01 Morning)</b></td>
+            <td><b>c1 (CNC-01 Afternoon)</b></td>
+            <td><b>c2 (CNC-02 Morning)</b></td>
+            <td><b>c3 (CNC-02 Afternoon)</b></td>
+          </tr>
+          <tr><td>0 — min</td><td>5.72</td><td>5.68</td><td>5.78</td><td>5.75</td></tr>
+          <tr><td>1 — Q1</td><td>5.76</td><td>5.73</td><td>5.82</td><td>5.79</td></tr>
+          <tr><td>2 — median</td><td>5.79</td><td>5.76</td><td>5.85</td><td>5.83</td></tr>
+          <tr><td>3 — Q3</td><td>5.83</td><td>5.80</td><td>5.89</td><td>5.87</td></tr>
+          <tr><td>4 — max</td><td>5.89</td><td>5.86</td><td>5.96</td><td>5.93</td></tr>
+          <tr><td>5 — category</td><td>Morning</td><td>Afternoon</td><td>Morning</td><td>Afternoon</td></tr>
+          <tr><td>6 — xAxis</td><td>CNC-01</td><td>CNC-01</td><td>CNC-02</td><td>CNC-02</td></tr>
+          <tr><td>7 — nCategories</td><td>2</td><td>2</td><td>2</td><td>2</td></tr>
+        </table>
+
+        <p>
+          The builder will extract two series: <b>Afternoon</b> and <b>Morning</b> (alphabetically
+          sorted after deduplication of row 5). Each series will have two data points corresponding
+          to CNC-01 and CNC-02 (alphabetically sorted from row 6).
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=1 | eval seq=1, c0="5.72", c1="5.68", c2="5.78", c3="5.75"
+| append [| makeresults count=1 | eval seq=2, c0="5.76", c1="5.73", c2="5.82", c3="5.79"]
+| append [| makeresults count=1 | eval seq=3, c0="5.79", c1="5.76", c2="5.85", c3="5.83"]
+| append [| makeresults count=1 | eval seq=4, c0="5.83", c1="5.80", c2="5.89", c3="5.87"]
+| append [| makeresults count=1 | eval seq=5, c0="5.89", c1="5.86", c2="5.96", c3="5.93"]
+| append [| makeresults count=1 | eval seq=6, c0="Morning",  c1="Afternoon", c2="Morning",  c3="Afternoon"]
+| append [| makeresults count=1 | eval seq=7, c0="CNC-01",   c1="CNC-01",   c2="CNC-02",   c3="CNC-02"]
+| append [| makeresults count=1 | eval seq=8, c0="2",        c1="2",        c2="2",        c3="2"]
+| sort seq
+| table c0 c1 c2 c3</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Boxplot</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Component Thickness by Machine and Shift (mm)',
+    subtext: 'Tolerance band: 5.70 mm – 6.00 mm',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    axisPointer: { type: 'shadow' }
+  },
+  legend: {
+    bottom: 0
+  },
+  xAxis: {
+    type: 'category',
+    name: 'CNC Machine',
+    axisLabel: { rotate: 0 },
+    splitArea: { show: false }
+  },
+  yAxis: {
+    type: 'value',
+    name: 'Thickness (mm)',
+    min: 5.60,
+    max: 6.05,
+    splitArea: { show: true }
+  }
+};
+        </option>
+        <option name="height">440</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=1 | eval seq=1, c0="5.72", c1="5.68", c2="5.78", c3="5.75"
+| append [| makeresults count=1 | eval seq=2, c0="5.76", c1="5.73", c2="5.82", c3="5.79"]
+| append [| makeresults count=1 | eval seq=3, c0="5.79", c1="5.76", c2="5.85", c3="5.83"]
+| append [| makeresults count=1 | eval seq=4, c0="5.83", c1="5.80", c2="5.89", c3="5.87"]
+| append [| makeresults count=1 | eval seq=5, c0="5.89", c1="5.86", c2="5.96", c3="5.93"]
+| append [| makeresults count=1 | eval seq=6, c0="Morning",  c1="Afternoon", c2="Morning",  c3="Afternoon"]
+| append [| makeresults count=1 | eval seq=7, c0="CNC-01",   c1="CNC-01",   c2="CNC-02",   c3="CNC-02"]
+| append [| makeresults count=1 | eval seq=8, c0="2",        c1="2",        c2="2",        c3="2"]
+| sort seq
+| table c0 c1 c2 c3</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Boxplot</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Component Thickness by Machine and Shift (mm)',
+    subtext: 'Tolerance band: 5.70 mm – 6.00 mm',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    axisPointer: { type: 'shadow' }
+  },
+  legend: {
+    bottom: 0
+  },
+  xAxis: {
+    type: 'category',
+    name: 'CNC Machine',
+    axisLabel: { rotate: 0 },
+    splitArea: { show: false }
+  },
+  yAxis: {
+    type: 'value',
+    name: 'Thickness (mm)',
+    min: 5.60,
+    max: 6.05,
+    splitArea: { show: true }
+  }
+};
+        </option>
+        <option name="height">440</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Extending to more machines and shifts</h1>
+        <p>
+          To add a third machine (CNC-03), add one column per shift (c4 and c5) to every row,
+          update the category row to include <code>Morning</code> and <code>Afternoon</code> for
+          the new columns, update the xAxis row to <code>CNC-03</code>, and change the
+          nCategories row to keep the value at <code>2</code> (still 2 shift categories).
+        </p>
+        <p>
+          To add a third shift category, add new columns and update the nCategories value in row 7
+          to <code>3</code>. The builder automatically creates an additional series for the new
+          category name.
+        </p>
+        <p>
+          <b>Important:</b> the nCategories value controls how the builder partitions the columns
+          into groups. It must equal the number of unique values in row 5. If they do not match,
+          the grouping will be incorrect.
+        </p>
+
+        <h1>When to choose SimpleBoxplot vs Boxplot</h1>
+        <table class="mytableclass">
+          <tr>
+            <td><b>Need</b></td>
+            <td><b>Use</b></td>
+          </tr>
+          <tr>
+            <td>One boxplot per row, single series, optional outliers</td>
+            <td><code>dataType=SimpleBoxplot</code></td>
+          </tr>
+          <tr>
+            <td>Multiple grouped series on one x-axis (e.g. machine x shift)</td>
+            <td><code>dataType=Boxplot</code></td>
+          </tr>
+          <tr>
+            <td>SPL query produces statistics with <code>| stats perc25 ... BY group</code></td>
+            <td><code>dataType=SimpleBoxplot</code> (simpler to build)</td>
+          </tr>
+          <tr>
+            <td>Comparing shifts / time windows side-by-side for multiple assets</td>
+            <td><code>dataType=Boxplot</code> with transposed SPL</td>
+          </tr>
+        </table>
+      </html>
+
+    </panel>
+  </row>
+</dashboard>

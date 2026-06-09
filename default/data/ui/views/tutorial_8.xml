@@ -1,0 +1,527 @@
+<dashboard version="1.1" stylesheet="tutorial.css">
+  <label>8. Candlestick and Boxplot</label>
+  <row>
+    <panel>
+      <html>
+        <h1>Candlestick and Boxplot Charts</h1>
+        <p>
+          Both chart types convey statistical distribution rather than a single point value.
+          The candlestick (OHLC) chart originates in financial analysis but applies equally to any
+          metric where you track open, close, minimum, and maximum over a period. The boxplot is a
+          classical statistical chart for comparing distributions across categories.
+        </p>
+
+        <hr />
+
+        <h1>Candlestick Chart</h1>
+        <p>
+          Each candlestick is defined by four values in the order
+          <code>[open, close, lowest, highest]</code>. ECharts colours the body green (rising) or
+          red (falling) automatically based on whether close &gt; open or close &lt; open.
+        </p>
+        <p>
+          In Splunk, if your search produces OHLC columns you can bind them with
+          <code>seriesDataIndexBinding=[col_open;col_close;col_low;col_high]</code>. The example
+          below uses static data to keep the focus on the option structure:
+        </p>
+<pre><code><![CDATA[xAxis: { type: 'category', data: ['Mon', 'Tue', ...] },
+yAxis: { type: 'value', scale: true },
+series: [{
+  type: 'candlestick',
+  // [open, close, lowest, highest]
+  data: [
+    [100, 106, 97, 110],
+    [106, 102, 99, 112],
+    ...
+  ]
+}]]]></code></pre>
+        <p>
+          Set <code>yAxis: { scale: true }</code> so the y-axis starts at the data range rather
+          than zero — essential for financial-style charts.
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: '10-Day OHLC Chart',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'cross' }
+  },
+  toolbox: {
+    feature: {
+      saveAsImage: { show: true }
+    }
+  },
+  xAxis: {
+    type: 'category',
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    scale: true,
+    boundaryGap: true,
+    axisLine: { onZero: false },
+    splitLine: { show: false },
+    splitNumber: 20
+  },
+  yAxis: {
+    type: 'value',
+    scale: true,
+    name: 'Price ($)',
+    splitArea: { show: true }
+  },
+  series: [
+    {
+      name: 'OHLC',
+      type: 'candlestick',
+      data: [
+        [100.0, 106.5, 97.5,  109.0],
+        [106.5, 103.0, 100.0, 111.5],
+        [103.0, 110.5, 101.5, 113.0],
+        [110.5, 107.0, 104.5, 116.0],
+        [107.0, 115.5, 106.0, 118.5],
+        [115.5, 112.0, 109.5, 120.0],
+        [112.0, 118.5, 111.0, 122.5],
+        [118.5, 115.0, 113.0, 124.0],
+        [115.0, 121.5, 114.0, 125.5],
+        [121.5, 118.0, 116.0, 127.0]
+      ],
+      itemStyle: {
+        color: '#5cb85c',
+        color0: '#d9534f',
+        borderColor: '#5cb85c',
+        borderColor0: '#d9534f'
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: '10-Day OHLC Chart',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'cross' }
+  },
+  toolbox: {
+    feature: {
+      saveAsImage: { show: true }
+    }
+  },
+  xAxis: {
+    type: 'category',
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    scale: true,
+    boundaryGap: true,
+    axisLine: { onZero: false },
+    splitLine: { show: false },
+    splitNumber: 20
+  },
+  yAxis: {
+    type: 'value',
+    scale: true,
+    name: 'Price ($)',
+    splitArea: { show: true }
+  },
+  series: [
+    {
+      name: 'OHLC',
+      type: 'candlestick',
+      data: [
+        [100.0, 106.5, 97.5,  109.0],
+        [106.5, 103.0, 100.0, 111.5],
+        [103.0, 110.5, 101.5, 113.0],
+        [110.5, 107.0, 104.5, 116.0],
+        [107.0, 115.5, 106.0, 118.5],
+        [115.5, 112.0, 109.5, 120.0],
+        [112.0, 118.5, 111.0, 122.5],
+        [118.5, 115.0, 113.0, 124.0],
+        [115.0, 121.5, 114.0, 125.5],
+        [121.5, 118.0, 116.0, 127.0]
+      ],
+      itemStyle: {
+        color: '#5cb85c',
+        color0: '#d9534f',
+        borderColor: '#5cb85c',
+        borderColor0: '#d9534f'
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Candlestick with Moving Average Overlay</h1>
+        <p>
+          A common pattern is overlaying a moving average line on a candlestick chart. Add a
+          <code>line</code> series alongside the <code>candlestick</code> series, sharing the same
+          xAxis. Both series use the same x-axis category labels; the line series provides its own
+          <code>data</code> with the pre-computed MA values:
+        </p>
+<pre><code><![CDATA[series: [
+  {
+    name: 'OHLC',
+    type: 'candlestick',
+    data: [...]
+  },
+  {
+    name: '5-day MA',
+    type: 'line',
+    smooth: true,
+    lineStyle: { opacity: 0.7 },
+    data: [null, null, null, null, 108.5, 109.6, 112.7, 114.4, 115.7, 116.9]
+  }
+]]]></code></pre>
+        <p>Note: set the first N-1 MA values to <code>null</code> to avoid plotting before
+        enough data points exist for the window.</p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Candlestick with 5-Day Moving Average',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'cross' }
+  },
+  legend: {
+    data: ['OHLC', '5-Day MA'],
+    bottom: '2%'
+  },
+  xAxis: {
+    type: 'category',
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    axisLine: { onZero: false },
+    splitLine: { show: false }
+  },
+  yAxis: {
+    type: 'value',
+    scale: true,
+    splitArea: { show: true }
+  },
+  series: [
+    {
+      name: 'OHLC',
+      type: 'candlestick',
+      data: [
+        [100.0, 106.5, 97.5,  109.0],
+        [106.5, 103.0, 100.0, 111.5],
+        [103.0, 110.5, 101.5, 113.0],
+        [110.5, 107.0, 104.5, 116.0],
+        [107.0, 115.5, 106.0, 118.5],
+        [115.5, 112.0, 109.5, 120.0],
+        [112.0, 118.5, 111.0, 122.5],
+        [118.5, 115.0, 113.0, 124.0],
+        [115.0, 121.5, 114.0, 125.5],
+        [121.5, 118.0, 116.0, 127.0]
+      ],
+      itemStyle: {
+        color: '#5cb85c',
+        color0: '#d9534f',
+        borderColor: '#5cb85c',
+        borderColor0: '#d9534f'
+      }
+    },
+    {
+      name: '5-Day MA',
+      type: 'line',
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { opacity: 0.8, width: 2 },
+      data: [null, null, null, null, 108.5, 109.6, 112.7, 114.4, 115.7, 116.9]
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Candlestick with 5-Day Moving Average',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'cross' }
+  },
+  legend: {
+    data: ['OHLC', '5-Day MA'],
+    bottom: '2%'
+  },
+  xAxis: {
+    type: 'category',
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    axisLine: { onZero: false },
+    splitLine: { show: false }
+  },
+  yAxis: {
+    type: 'value',
+    scale: true,
+    splitArea: { show: true }
+  },
+  series: [
+    {
+      name: 'OHLC',
+      type: 'candlestick',
+      data: [
+        [100.0, 106.5, 97.5,  109.0],
+        [106.5, 103.0, 100.0, 111.5],
+        [103.0, 110.5, 101.5, 113.0],
+        [110.5, 107.0, 104.5, 116.0],
+        [107.0, 115.5, 106.0, 118.5],
+        [115.5, 112.0, 109.5, 120.0],
+        [112.0, 118.5, 111.0, 122.5],
+        [118.5, 115.0, 113.0, 124.0],
+        [115.0, 121.5, 114.0, 125.5],
+        [121.5, 118.0, 116.0, 127.0]
+      ],
+      itemStyle: {
+        color: '#5cb85c',
+        color0: '#d9534f',
+        borderColor: '#5cb85c',
+        borderColor0: '#d9534f'
+      }
+    },
+    {
+      name: '5-Day MA',
+      type: 'line',
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { opacity: 0.8, width: 2 },
+      data: [null, null, null, null, 108.5, 109.6, 112.7, 114.4, 115.7, 116.9]
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Boxplot Chart</h1>
+        <p>
+          A boxplot represents a statistical distribution using five summary statistics per category:
+          minimum, first quartile (Q1), median, third quartile (Q3), and maximum. ECharts expects
+          each data entry as <code>[min, Q1, median, Q3, max]</code>.
+        </p>
+        <p>
+          This is well suited for comparing response-time distributions across services, error rates
+          across hosts, or any metric where you want to show spread rather than just the mean.
+        </p>
+<pre><code><![CDATA[xAxis: {
+  type: 'category',
+  data: ['Web', 'API', 'Database', 'Cache', 'Search']
+},
+yAxis: { type: 'value', name: 'ms' },
+series: [{
+  name: 'Response Time',
+  type: 'boxplot',
+  // [min, Q1, median, Q3, max]
+  data: [
+    [25,  45,  68,  120,  280],
+    [15,  30,  48,   85,  190],
+    [80, 150, 220,  350,  600],
+    [ 5,   8,  12,   18,   35],
+    [120,200, 280,  420,  780]
+  ]
+}]]]></code></pre>
+        <p>
+          To compute these statistics in Splunk, combine <code>eventstats</code> or <code>streamstats</code>
+          with <code>perc25()</code>, <code>median()</code>, <code>perc75()</code>, <code>min()</code>,
+          and <code>max()</code> aggregation functions, then bind via
+          <code>seriesDataIndexBinding=[min_col;q1_col;median_col;q3_col;max_col]</code>.
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Response Time Distribution by Service (ms)',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    axisPointer: { type: 'shadow' },
+    formatter: function (param) {
+      return [
+        param.name,
+        'Max: '    + param.data[5],
+        'Q3: '     + param.data[4],
+        'Median: ' + param.data[3],
+        'Q1: '     + param.data[2],
+        'Min: '    + param.data[1]
+      ].join('<br/>');
+    }
+  },
+  grid: { left: '8%', right: '5%', bottom: '10%' },
+  xAxis: {
+    type: 'category',
+    data: ['Web Server', 'API Gateway', 'Database', 'Cache', 'Search'],
+    boundaryGap: true,
+    nameGap: 30,
+    splitArea: { show: true },
+    axisLabel: { rotate: 15 },
+    splitLine: { show: false }
+  },
+  yAxis: {
+    type: 'value',
+    name: 'Response time (ms)',
+    splitArea: { show: true }
+  },
+  series: [
+    {
+      name: 'Response Time',
+      type: 'boxplot',
+      data: [
+        [25,  45,  68,  120,  280],
+        [15,  30,  48,   85,  190],
+        [80, 150, 220,  350,  600],
+        [5,    8,  12,   18,   35],
+        [120, 200, 280, 420,  780]
+      ],
+      tooltip: {
+        formatter: function (param) {
+          return [
+            param.name,
+            'Max: '    + param.data[5],
+            'Q3: '     + param.data[4],
+            'Median: ' + param.data[3],
+            'Q1: '     + param.data[2],
+            'Min: '    + param.data[1]
+          ].join('  |  ');
+        }
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Response Time Distribution by Service (ms)',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    axisPointer: { type: 'shadow' },
+    formatter: function (param) {
+      return [
+        param.name,
+        'Max: '    + param.data[5],
+        'Q3: '     + param.data[4],
+        'Median: ' + param.data[3],
+        'Q1: '     + param.data[2],
+        'Min: '    + param.data[1]
+      ].join('<br/>');
+    }
+  },
+  grid: { left: '8%', right: '5%', bottom: '10%' },
+  xAxis: {
+    type: 'category',
+    data: ['Web Server', 'API Gateway', 'Database', 'Cache', 'Search'],
+    boundaryGap: true,
+    nameGap: 30,
+    splitArea: { show: true },
+    axisLabel: { rotate: 15 },
+    splitLine: { show: false }
+  },
+  yAxis: {
+    type: 'value',
+    name: 'Response time (ms)',
+    splitArea: { show: true }
+  },
+  series: [
+    {
+      name: 'Response Time',
+      type: 'boxplot',
+      data: [
+        [25,  45,  68,  120,  280],
+        [15,  30,  48,   85,  190],
+        [80, 150, 220,  350,  600],
+        [5,    8,  12,   18,   35],
+        [120, 200, 280, 420,  780]
+      ],
+      tooltip: {
+        formatter: function (param) {
+          return [
+            param.name,
+            'Max: '    + param.data[5],
+            'Q3: '     + param.data[4],
+            'Median: ' + param.data[3],
+            'Q1: '     + param.data[2],
+            'Min: '    + param.data[1]
+          ].join('  |  ');
+        }
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+    </panel>
+  </row>
+</dashboard>

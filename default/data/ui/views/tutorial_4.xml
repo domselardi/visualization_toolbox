@@ -1,0 +1,434 @@
+<dashboard version="1.1" stylesheet="tutorial.css">
+  <label>4. Pie, Donut and Rose Charts</label>
+  <row>
+    <panel>
+      <html>
+        <h1>Pie, Donut and Nightingale Rose Charts</h1>
+        <p>
+          All three chart types use a single <b>pie</b> series. The key differentiator is the <code>radius</code>
+          property:
+        </p>
+        <table class="mytableclass">
+          <tr>
+            <td><b>Chart type</b></td>
+            <td><b>radius setting</b></td>
+            <td><b>Extra property</b></td>
+          </tr>
+          <tr>
+            <td>Pie</td>
+            <td><code>'55%'</code> (single value)</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Donut / Ring</td>
+            <td><code>['40%', '70%']</code> (inner, outer)</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Nightingale Rose</td>
+            <td><code>[20, 120]</code> (min px, max px)</td>
+            <td><code>roseType: 'area'</code></td>
+          </tr>
+        </table>
+        <p>
+          For pie-type charts, data is embedded directly in the <code>series.data</code> array as
+          <code>{name: 'Label', value: 100}</code> objects. No <code>seriesDataIndexBinding</code> or
+          <code>xAxisDataIndexBinding</code> is required when using static data.
+        </p>
+
+        <hr />
+
+        <h1>Basic Pie Chart</h1>
+        <p>
+          Each slice is defined by a <b>name</b> and a <b>value</b>. ECharts automatically calculates
+          and displays percentages. Setting <code>tooltip.formatter</code> to <code>'{b}: {c} ({d}%)'</code>
+          shows the category name, raw count, and computed percentage in the hover tooltip.
+        </p>
+<pre><code><![CDATA[series: [{
+  name: 'Log Source',
+  type: 'pie',
+  radius: '55%',
+  data: [
+    { value: 42350, name: 'Web Application' },
+    { value: 28100, name: 'Firewall' },
+    ...
+  ]
+}]]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Log Sources by Volume',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} events ({d}%)'
+  },
+  legend: {
+    orient: 'vertical',
+    left: 'left',
+    top: 'middle'
+  },
+  series: [
+    {
+      name: 'Log Source',
+      type: 'pie',
+      radius: '55%',
+      center: ['60%', '55%'],
+      data: [
+        { value: 42350, name: 'Web Application' },
+        { value: 28100, name: 'Firewall' },
+        { value: 19800, name: 'Database' },
+        { value: 15400, name: 'Authentication' },
+        { value: 9600,  name: 'Network IDS' },
+        { value: 4750,  name: 'Endpoint' }
+      ],
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0,0,0,0.5)'
+        }
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Log Sources by Volume',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} events ({d}%)'
+  },
+  legend: {
+    orient: 'vertical',
+    left: 'left',
+    top: 'middle'
+  },
+  series: [
+    {
+      name: 'Log Source',
+      type: 'pie',
+      radius: '55%',
+      center: ['60%', '55%'],
+      data: [
+        { value: 42350, name: 'Web Application' },
+        { value: 28100, name: 'Firewall' },
+        { value: 19800, name: 'Database' },
+        { value: 15400, name: 'Authentication' },
+        { value: 9600,  name: 'Network IDS' },
+        { value: 4750,  name: 'Endpoint' }
+      ],
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0,0,0,0.5)'
+        }
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Donut / Ring Chart</h1>
+        <p>
+          Setting <code>radius</code> to a two-element array creates an inner hole. Combine with
+          <code>itemStyle: { borderRadius: 8 }</code> for rounded arc ends and a polished look.
+          The label can be hidden normally and revealed on hover via <code>emphasis.label</code>.
+        </p>
+<pre><code><![CDATA[series: [{
+  type: 'pie',
+  radius: ['40%', '70%'],
+  avoidLabelOverlap: false,
+  itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+  label: { show: false, position: 'center' },
+  emphasis: {
+    label: { show: true, fontSize: 16, fontWeight: 'bold' }
+  },
+  labelLine: { show: false },
+  data: [...]
+}]]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Traffic by Source',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} ({d}%)'
+  },
+  legend: {
+    top: '5%',
+    left: 'center'
+  },
+  series: [
+    {
+      name: 'Traffic Source',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 8,
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      label: {
+        show: false,
+        position: 'center'
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 16,
+          fontWeight: 'bold'
+        }
+      },
+      labelLine: {
+        show: false
+      },
+      data: [
+        { value: 1048, name: 'Search Engine' },
+        { value: 735,  name: 'Direct' },
+        { value: 580,  name: 'Email Campaign' },
+        { value: 484,  name: 'Social Media' },
+        { value: 300,  name: 'Other' }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Traffic by Source',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} ({d}%)'
+  },
+  legend: {
+    top: '5%',
+    left: 'center'
+  },
+  series: [
+    {
+      name: 'Traffic Source',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 8,
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      label: {
+        show: false,
+        position: 'center'
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 16,
+          fontWeight: 'bold'
+        }
+      },
+      labelLine: {
+        show: false
+      },
+      data: [
+        { value: 1048, name: 'Search Engine' },
+        { value: 735,  name: 'Direct' },
+        { value: 580,  name: 'Email Campaign' },
+        { value: 484,  name: 'Social Media' },
+        { value: 300,  name: 'Other' }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Nightingale Rose Chart</h1>
+        <p>
+          Adding <code>roseType: 'area'</code> makes each sector's radius proportional to its value,
+          which amplifies visual differences between categories. The two-element <code>radius</code>
+          sets the minimum and maximum physical radius in pixels, preventing very small values from
+          becoming invisible.
+        </p>
+        <p>
+          This chart type works well for cyclic or ranked data such as monthly counts, alert severity
+          distributions, or top-N categories.
+        </p>
+<pre><code><![CDATA[series: [{
+  type: 'pie',
+  radius: [20, 130],
+  roseType: 'area',
+  itemStyle: { borderRadius: 7 },
+  data: [
+    { value: 380, name: 'Jan' },
+    { value: 820, name: 'Jul' },
+    ...
+  ]
+}]]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Monthly Alert Volume',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} alerts'
+  },
+  legend: {
+    bottom: '2%',
+    left: 'center'
+  },
+  series: [
+    {
+      type: 'pie',
+      radius: [20, 130],
+      center: ['50%', '50%'],
+      roseType: 'area',
+      itemStyle: {
+        borderRadius: 7
+      },
+      data: [
+        { value: 380,  name: 'Jan' },
+        { value: 420,  name: 'Feb' },
+        { value: 580,  name: 'Mar' },
+        { value: 510,  name: 'Apr' },
+        { value: 690,  name: 'May' },
+        { value: 740,  name: 'Jun' },
+        { value: 820,  name: 'Jul' },
+        { value: 760,  name: 'Aug' },
+        { value: 640,  name: 'Sep' },
+        { value: 530,  name: 'Oct' },
+        { value: 450,  name: 'Nov' },
+        { value: 410,  name: 'Dec' }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">430</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Monthly Alert Volume',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} alerts'
+  },
+  legend: {
+    bottom: '2%',
+    left: 'center'
+  },
+  series: [
+    {
+      type: 'pie',
+      radius: [20, 130],
+      center: ['50%', '50%'],
+      roseType: 'area',
+      itemStyle: {
+        borderRadius: 7
+      },
+      data: [
+        { value: 380,  name: 'Jan' },
+        { value: 420,  name: 'Feb' },
+        { value: 580,  name: 'Mar' },
+        { value: 510,  name: 'Apr' },
+        { value: 690,  name: 'May' },
+        { value: 740,  name: 'Jun' },
+        { value: 820,  name: 'Jul' },
+        { value: 760,  name: 'Aug' },
+        { value: 640,  name: 'Sep' },
+        { value: 530,  name: 'Oct' },
+        { value: 450,  name: 'Nov' },
+        { value: 410,  name: 'Dec' }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">430</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+    </panel>
+  </row>
+</dashboard>

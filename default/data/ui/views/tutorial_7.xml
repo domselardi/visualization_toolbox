@@ -1,0 +1,591 @@
+<dashboard version="1.1" stylesheet="tutorial.css">
+  <label>7. Treemap, Sunburst and Funnel</label>
+  <row>
+    <panel>
+      <html>
+        <h1>Treemap, Sunburst and Funnel Charts</h1>
+        <p>
+          These chart types are ideal for hierarchical data and sequential stage analysis.
+          Because they use nested data structures, the data is typically embedded directly
+          in the option string rather than bound via <code>seriesDataIndexBinding</code>.
+        </p>
+
+        <hr />
+
+        <h1>Treemap</h1>
+        <p>
+          A treemap renders hierarchical data as nested rectangles. Area is proportional to value.
+          Each node can have <code>children</code> to create sub-levels. This is useful for
+          visualising cost breakdowns, log volume by source category, or file-system usage.
+        </p>
+<pre><code><![CDATA[series: [{
+  type: 'treemap',
+  data: [
+    {
+      name: 'Compute',
+      value: 450,
+      children: [
+        { name: 'Web Servers', value: 180 },
+        { name: 'App Servers', value: 150 },
+        { name: 'Batch Jobs',  value: 120 }
+      ]
+    },
+    ...
+  ]
+}]]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Infrastructure Cost Breakdown ($K)',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: '{b}: ${c}K'
+  },
+  series: [
+    {
+      name: 'Infrastructure',
+      type: 'treemap',
+      visibleMin: 300,
+      label: {
+        show: true,
+        formatter: '{b}\n${c}K'
+      },
+      upperLabel: {
+        show: true,
+        height: 28,
+        color: '#fff'
+      },
+      itemStyle: {
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      levels: [
+        {
+          itemStyle: {
+            borderWidth: 3,
+            borderColor: '#333',
+            gapWidth: 3
+          }
+        },
+        {
+          colorSaturation: [0.35, 0.5],
+          itemStyle: {
+            borderColorSaturation: 0.6,
+            gapWidth: 1,
+            borderWidth: 2
+          }
+        }
+      ],
+      data: [
+        {
+          name: 'Compute',
+          value: 450,
+          children: [
+            { name: 'Web Servers', value: 180 },
+            { name: 'App Servers', value: 150 },
+            { name: 'Batch Jobs',  value: 120 }
+          ]
+        },
+        {
+          name: 'Database',
+          value: 340,
+          children: [
+            { name: 'Primary DB',     value: 180 },
+            { name: 'Read Replicas',  value: 100 },
+            { name: 'Cache Layer',    value: 60  }
+          ]
+        },
+        {
+          name: 'Storage',
+          value: 280,
+          children: [
+            { name: 'Block Storage',   value: 120 },
+            { name: 'Object Storage',  value: 100 },
+            { name: 'Backups',         value: 60  }
+          ]
+        },
+        {
+          name: 'Networking',
+          value: 160,
+          children: [
+            { name: 'CDN',             value: 80 },
+            { name: 'Load Balancers',  value: 50 },
+            { name: 'Egress Bandwidth',value: 30 }
+          ]
+        },
+        {
+          name: 'Monitoring',
+          value: 95,
+          children: [
+            { name: 'APM',     value: 50 },
+            { name: 'Logging', value: 30 },
+            { name: 'Tracing', value: 15 }
+          ]
+        }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">480</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Infrastructure Cost Breakdown ($K)',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: '{b}: ${c}K'
+  },
+  series: [
+    {
+      name: 'Infrastructure',
+      type: 'treemap',
+      visibleMin: 300,
+      label: {
+        show: true,
+        formatter: '{b}\n${c}K'
+      },
+      upperLabel: {
+        show: true,
+        height: 28,
+        color: '#fff'
+      },
+      itemStyle: {
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      levels: [
+        {
+          itemStyle: {
+            borderWidth: 3,
+            borderColor: '#333',
+            gapWidth: 3
+          }
+        },
+        {
+          colorSaturation: [0.35, 0.5],
+          itemStyle: {
+            borderColorSaturation: 0.6,
+            gapWidth: 1,
+            borderWidth: 2
+          }
+        }
+      ],
+      data: [
+        {
+          name: 'Compute',
+          value: 450,
+          children: [
+            { name: 'Web Servers', value: 180 },
+            { name: 'App Servers', value: 150 },
+            { name: 'Batch Jobs',  value: 120 }
+          ]
+        },
+        {
+          name: 'Database',
+          value: 340,
+          children: [
+            { name: 'Primary DB',     value: 180 },
+            { name: 'Read Replicas',  value: 100 },
+            { name: 'Cache Layer',    value: 60  }
+          ]
+        },
+        {
+          name: 'Storage',
+          value: 280,
+          children: [
+            { name: 'Block Storage',   value: 120 },
+            { name: 'Object Storage',  value: 100 },
+            { name: 'Backups',         value: 60  }
+          ]
+        },
+        {
+          name: 'Networking',
+          value: 160,
+          children: [
+            { name: 'CDN',             value: 80 },
+            { name: 'Load Balancers',  value: 50 },
+            { name: 'Egress Bandwidth',value: 30 }
+          ]
+        },
+        {
+          name: 'Monitoring',
+          value: 95,
+          children: [
+            { name: 'APM',     value: 50 },
+            { name: 'Logging', value: 30 },
+            { name: 'Tracing', value: 15 }
+          ]
+        }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">480</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Sunburst Chart</h1>
+        <p>
+          A sunburst chart arranges the same hierarchical data in concentric rings radiating outward
+          from the root. Inner rings represent parent categories; outer rings represent leaf nodes.
+          It is especially effective for showing proportional composition at each level simultaneously.
+        </p>
+        <p>
+          Key options: <code>radius</code> sets the inner/outer size, and
+          <code>label: { rotate: 'radial' }</code> keeps labels readable at any angle.
+          Clicking an inner ring drills down into that subtree; pressing Escape or clicking the centre
+          navigates back up.
+        </p>
+<pre><code><![CDATA[series: [{
+  type: 'sunburst',
+  radius: [0, '90%'],
+  label: { rotate: 'radial' },
+  data: [
+    {
+      name: 'Applications',
+      value: 7200,
+      children: [
+        { name: 'Web',    value: 3200 },
+        { name: 'Mobile', value: 2100 },
+        { name: 'API',    value: 1900 }
+      ]
+    },
+    ...
+  ]
+}]]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Log Volume by Source (click to drill down)',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: '{b}: {c} events'
+  },
+  series: [
+    {
+      type: 'sunburst',
+      data: [
+        {
+          name: 'Applications',
+          value: 7200,
+          children: [
+            { name: 'Web App',     value: 3200 },
+            { name: 'Mobile',      value: 2100 },
+            { name: 'REST API',    value: 1900 }
+          ]
+        },
+        {
+          name: 'Infrastructure',
+          value: 5100,
+          children: [
+            { name: 'Linux Servers', value: 2400 },
+            { name: 'Network Gear',  value: 1700 },
+            { name: 'Storage Arrays',value: 1000 }
+          ]
+        },
+        {
+          name: 'Security',
+          value: 3800,
+          children: [
+            { name: 'Firewall',    value: 1800 },
+            { name: 'IDS / IPS',   value: 1200 },
+            { name: 'Auth Proxy',  value: 800  }
+          ]
+        },
+        {
+          name: 'Cloud Services',
+          value: 2600,
+          children: [
+            { name: 'Object Store', value: 1100 },
+            { name: 'Managed DB',   value: 900  },
+            { name: 'Serverless',   value: 600  }
+          ]
+        }
+      ],
+      radius: [0, '88%'],
+      label: {
+        rotate: 'radial'
+      },
+      itemStyle: {
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: '#fff'
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">500</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Log Volume by Source (click to drill down)',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: '{b}: {c} events'
+  },
+  series: [
+    {
+      type: 'sunburst',
+      data: [
+        {
+          name: 'Applications',
+          value: 7200,
+          children: [
+            { name: 'Web App',     value: 3200 },
+            { name: 'Mobile',      value: 2100 },
+            { name: 'REST API',    value: 1900 }
+          ]
+        },
+        {
+          name: 'Infrastructure',
+          value: 5100,
+          children: [
+            { name: 'Linux Servers', value: 2400 },
+            { name: 'Network Gear',  value: 1700 },
+            { name: 'Storage Arrays',value: 1000 }
+          ]
+        },
+        {
+          name: 'Security',
+          value: 3800,
+          children: [
+            { name: 'Firewall',    value: 1800 },
+            { name: 'IDS / IPS',   value: 1200 },
+            { name: 'Auth Proxy',  value: 800  }
+          ]
+        },
+        {
+          name: 'Cloud Services',
+          value: 2600,
+          children: [
+            { name: 'Object Store', value: 1100 },
+            { name: 'Managed DB',   value: 900  },
+            { name: 'Serverless',   value: 600  }
+          ]
+        }
+      ],
+      radius: [0, '88%'],
+      label: {
+        rotate: 'radial'
+      },
+      itemStyle: {
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: '#fff'
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">500</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Funnel Chart</h1>
+        <p>
+          A funnel chart visualises a sequential process where values decrease at each stage.
+          It is well suited to alert triage pipelines, sales conversion funnels, or any multi-step
+          filtering workflow.
+        </p>
+        <p>
+          Set <code>sort: 'descending'</code> so the largest stage appears at the top. The
+          <code>gap</code> property controls the spacing between stages in pixels.
+        </p>
+<pre><code><![CDATA[series: [{
+  name: 'Alert Triage',
+  type: 'funnel',
+  left: '10%',
+  width: '80%',
+  sort: 'descending',
+  gap: 2,
+  label: { show: true, position: 'inside' },
+  data: [
+    { value: 10000, name: 'Raw Events'         },
+    { value:  5200, name: 'Correlated'          },
+    { value:  1800, name: 'Notable Alerts'      },
+    { value:   620, name: 'Investigated'        },
+    { value:   180, name: 'Confirmed Incidents' },
+    { value:    45, name: 'Critical'            }
+  ]
+}]]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Security Alert Triage Funnel',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} ({d}%)'
+  },
+  legend: {
+    orient: 'vertical',
+    right: '2%',
+    top: 'center'
+  },
+  series: [
+    {
+      name: 'Alert Triage',
+      type: 'funnel',
+      left: '5%',
+      top: 50,
+      bottom: 30,
+      width: '70%',
+      sort: 'descending',
+      gap: 3,
+      label: {
+        show: true,
+        position: 'inside',
+        formatter: '{b}\n{c}'
+      },
+      labelLine: {
+        length: 10,
+        lineStyle: { width: 1 }
+      },
+      itemStyle: {
+        borderColor: '#fff',
+        borderWidth: 1,
+        opacity: 0.85
+      },
+      emphasis: {
+        label: { fontSize: 14 }
+      },
+      data: [
+        { value: 10000, name: 'Raw Events'         },
+        { value:  5200, name: 'Correlated'          },
+        { value:  1800, name: 'Notable Alerts'      },
+        { value:   620, name: 'Investigated'        },
+        { value:   180, name: 'Confirmed Incidents' },
+        { value:    45, name: 'Critical'            }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">440</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Security Alert Triage Funnel',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} ({d}%)'
+  },
+  legend: {
+    orient: 'vertical',
+    right: '2%',
+    top: 'center'
+  },
+  series: [
+    {
+      name: 'Alert Triage',
+      type: 'funnel',
+      left: '5%',
+      top: 50,
+      bottom: 30,
+      width: '70%',
+      sort: 'descending',
+      gap: 3,
+      label: {
+        show: true,
+        position: 'inside',
+        formatter: '{b}\n{c}'
+      },
+      labelLine: {
+        length: 10,
+        lineStyle: { width: 1 }
+      },
+      itemStyle: {
+        borderColor: '#fff',
+        borderWidth: 1,
+        opacity: 0.85
+      },
+      emphasis: {
+        label: { fontSize: 14 }
+      },
+      data: [
+        { value: 10000, name: 'Raw Events'         },
+        { value:  5200, name: 'Correlated'          },
+        { value:  1800, name: 'Notable Alerts'      },
+        { value:   620, name: 'Investigated'        },
+        { value:   180, name: 'Confirmed Incidents' },
+        { value:    45, name: 'Critical'            }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">440</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+    </panel>
+  </row>
+</dashboard>

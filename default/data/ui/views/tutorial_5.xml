@@ -1,0 +1,429 @@
+<dashboard version="1.1" stylesheet="tutorial.css">
+  <label>5. Scatter, Bubble and Heatmap</label>
+  <row>
+    <panel>
+      <html>
+        <h1>Scatter, Bubble and Heatmap Charts</h1>
+        <p>
+          These chart types are well-suited for visualising correlations, density patterns, and
+          multi-dimensional distributions directly from Splunk search results.
+        </p>
+
+        <hr />
+
+        <h1>Scatter Chart — live Splunk data</h1>
+        <p>
+          A scatter chart plots two numeric fields as (x, y) coordinates. To bind two columns to
+          a single series, use the bracket syntax in <code>seriesDataIndexBinding</code>:
+        </p>
+<pre><code><![CDATA[<option name="visualization_toolbox.hman.seriesDataIndexBinding">[1;2]</option>]]></code></pre>
+        <p>
+          This maps column 1 and column 2 of each result row as a two-element array
+          <code>[x, y]</code> per data point. The search below generates 60 random
+          (x, y) pairs using <code>makeresults</code> and <code>streamstats</code>:
+        </p>
+<pre><code><![CDATA[| makeresults count=60
+| streamstats count
+| eval x = (random() % 100)
+| eval y = (random() % 100)
+| fields count x y]]></code></pre>
+        <p>
+          The result table has three columns: <b>count</b> (index 0), <b>x</b> (index 1),
+          <b>y</b> (index 2). Setting <code>seriesDataIndexBinding=[1;2]</code> binds x and y
+          into each scatter point.
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=60
+| streamstats count
+| eval x = (random() % 100)
+| eval y = (random() % 100)
+| fields count x y</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Random Scatter — x vs y',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '({c})'
+  },
+  xAxis: {
+    type: 'value',
+    name: 'x',
+    nameLocation: 'end',
+    scale: true
+  },
+  yAxis: {
+    type: 'value',
+    name: 'y',
+    nameLocation: 'end',
+    scale: true
+  },
+  series: [
+    {
+      name: 'Points',
+      type: 'scatter',
+      symbolSize: 8
+    }
+  ]
+};
+        </option>
+        <option name="visualization_toolbox.hman.seriesDataIndexBinding">[1;2]</option>
+        <option name="height">350</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=60
+| streamstats count
+| eval x = (random() % 100)
+| eval y = (random() % 100)
+| fields count x y</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Random Scatter — x vs y',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: '({c})'
+  },
+  xAxis: {
+    type: 'value',
+    name: 'x',
+    nameLocation: 'end',
+    scale: true
+  },
+  yAxis: {
+    type: 'value',
+    name: 'y',
+    nameLocation: 'end',
+    scale: true
+  },
+  series: [
+    {
+      name: 'Points',
+      type: 'scatter',
+      symbolSize: 8
+    }
+  ]
+};
+        </option>
+        <option name="visualization_toolbox.hman.seriesDataIndexBinding">[1;2]</option>
+        <option name="height">350</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Bubble Chart — encoding a third dimension</h1>
+        <p>
+          A bubble chart extends scatter by encoding a third variable as the symbol size. Bind three
+          columns using the <code>[1;2;3]</code> syntax so each data point becomes <code>[x, y, size]</code>.
+          Then use a <code>symbolSize</code> callback to scale the bubble radius from the third value:
+        </p>
+<pre><code><![CDATA[<option name="visualization_toolbox.hman.seriesDataIndexBinding">[1;2;3]</option>
+
+series: [{
+  type: 'scatter',
+  symbolSize: function (val) {
+    return val[2] / 4;   // val = [x, y, size]
+  }
+}]]]></code></pre>
+        <p>
+          The search adds a <code>size</code> column (index 3) representing request volume:
+        </p>
+<pre><code><![CDATA[| makeresults count=40
+| streamstats count
+| eval x    = (random() % 90) + 5
+| eval y    = (random() % 90) + 5
+| eval size = (random() % 60) + 20
+| fields count x y size]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=40
+| streamstats count
+| eval x    = (random() % 90) + 5
+| eval y    = (random() % 90) + 5
+| eval size = (random() % 60) + 20
+| fields count x y size</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Bubble Chart — x, y and size',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: 'x={c[0]}  y={c[1]}  size={c[2]}'
+  },
+  xAxis: {
+    type: 'value',
+    name: 'x',
+    scale: true
+  },
+  yAxis: {
+    type: 'value',
+    name: 'y',
+    scale: true
+  },
+  series: [
+    {
+      name: 'Requests',
+      type: 'scatter',
+      symbolSize: function (val) {
+        return val[2] / 4;
+      },
+      itemStyle: {
+        opacity: 0.7
+      }
+    }
+  ]
+};
+        </option>
+        <option name="visualization_toolbox.hman.seriesDataIndexBinding">[1;2;3]</option>
+        <option name="height">350</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=40
+| streamstats count
+| eval x    = (random() % 90) + 5
+| eval y    = (random() % 90) + 5
+| eval size = (random() % 60) + 20
+| fields count x y size</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Bubble Chart — x, y and size',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: 'x={c[0]}  y={c[1]}  size={c[2]}'
+  },
+  xAxis: {
+    type: 'value',
+    name: 'x',
+    scale: true
+  },
+  yAxis: {
+    type: 'value',
+    name: 'y',
+    scale: true
+  },
+  series: [
+    {
+      name: 'Requests',
+      type: 'scatter',
+      symbolSize: function (val) {
+        return val[2] / 4;
+      },
+      itemStyle: {
+        opacity: 0.7
+      }
+    }
+  ]
+};
+        </option>
+        <option name="visualization_toolbox.hman.seriesDataIndexBinding">[1;2;3]</option>
+        <option name="height">350</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Heatmap — two-dimensional density</h1>
+        <p>
+          A cartesian heatmap requires both axes to be <code>'category'</code> type and a
+          <code>visualMap</code> component to define the colour scale. Data points are
+          <code>[xIndex, yIndex, value]</code> tuples where the indices reference positions in
+          <code>xAxis.data</code> and <code>yAxis.data</code>.
+        </p>
+<pre><code><![CDATA[xAxis: { type: 'category', data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'] },
+yAxis: { type: 'category', data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
+visualMap: {
+  min: 0, max: 500,
+  calculable: true,
+  orient: 'horizontal',
+  left: 'center',
+  bottom: '5%'
+},
+series: [{
+  type: 'heatmap',
+  data: [[0, 0, 5], [1, 0, 8], ...],
+  label: { show: true }
+}]]]></code></pre>
+        <p>
+          The chart below shows a simulated log-event density by hour of day (x axis) and day of
+          week (y axis). This pattern is typical for operational dashboards: peak volume mid-morning
+          on weekdays, low activity at night and on weekends.
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Log Event Density — Hour of Day vs Day of Week',
+    left: 'center'
+  },
+  tooltip: {
+    position: 'top',
+    formatter: '{c} events'
+  },
+  grid: {
+    top: '10%',
+    height: '60%'
+  },
+  xAxis: {
+    type: 'category',
+    data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+    splitArea: { show: true }
+  },
+  yAxis: {
+    type: 'category',
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    splitArea: { show: true }
+  },
+  visualMap: {
+    min: 0,
+    max: 500,
+    calculable: true,
+    orient: 'horizontal',
+    left: 'center',
+    bottom: '2%'
+  },
+  series: [
+    {
+      name: 'Events',
+      type: 'heatmap',
+      data: [
+        [0,0,5],   [1,0,8],   [2,0,180], [3,0,320], [4,0,250], [5,0,40],
+        [0,1,6],   [1,1,10],  [2,1,210], [3,1,380], [4,1,290], [5,1,35],
+        [0,2,8],   [1,2,12],  [2,2,230], [3,2,420], [4,2,340], [5,2,45],
+        [0,3,9],   [1,3,11],  [2,3,220], [3,3,400], [4,3,310], [5,3,38],
+        [0,4,7],   [1,4,9],   [2,4,190], [3,4,360], [4,4,270], [5,4,28],
+        [0,5,15],  [1,5,5],   [2,5,20],  [3,5,55],  [4,5,45],  [5,5,80],
+        [0,6,20],  [1,6,4],   [2,6,15],  [3,6,40],  [4,6,30],  [5,6,90]
+      ],
+      label: {
+        show: true,
+        fontSize: 10
+      },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowColor: 'rgba(0,0,0,0.5)'
+        }
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">480</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Log Event Density — Hour of Day vs Day of Week',
+    left: 'center'
+  },
+  tooltip: {
+    position: 'top',
+    formatter: '{c} events'
+  },
+  grid: {
+    top: '10%',
+    height: '60%'
+  },
+  xAxis: {
+    type: 'category',
+    data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+    splitArea: { show: true }
+  },
+  yAxis: {
+    type: 'category',
+    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    splitArea: { show: true }
+  },
+  visualMap: {
+    min: 0,
+    max: 500,
+    calculable: true,
+    orient: 'horizontal',
+    left: 'center',
+    bottom: '2%'
+  },
+  series: [
+    {
+      name: 'Events',
+      type: 'heatmap',
+      data: [
+        [0,0,5],   [1,0,8],   [2,0,180], [3,0,320], [4,0,250], [5,0,40],
+        [0,1,6],   [1,1,10],  [2,1,210], [3,1,380], [4,1,290], [5,1,35],
+        [0,2,8],   [1,2,12],  [2,2,230], [3,2,420], [4,2,340], [5,2,45],
+        [0,3,9],   [1,3,11],  [2,3,220], [3,3,400], [4,3,310], [5,3,38],
+        [0,4,7],   [1,4,9],   [2,4,190], [3,4,360], [4,4,270], [5,4,28],
+        [0,5,15],  [1,5,5],   [2,5,20],  [3,5,55],  [4,5,45],  [5,5,80],
+        [0,6,20],  [1,6,4],   [2,6,15],  [3,6,40],  [4,6,30],  [5,6,90]
+      ],
+      label: {
+        show: true,
+        fontSize: 10
+      },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowColor: 'rgba(0,0,0,0.5)'
+        }
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">480</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+    </panel>
+  </row>
+</dashboard>

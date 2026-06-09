@@ -1,61 +1,122 @@
-<dashboard  version="1.1" stylesheet="tutorial.css">
+<dashboard version="1.1" stylesheet="tutorial.css">
   <label>FAQ</label>
   <row>
     <panel>
       <html>
+
         <p>
-          <b>Question: I'm getting confused with these new terms like toolbox, tooltip, dataZoom, series.. Where is a good starting point?</b>
+          <b>Q: I'm getting confused with terms like toolbox, tooltip, dataZoom, series… Where do I start?</b>
         </p>
         <p>
-          Answer: Check out the <a href="https://echarts.apache.org/en/cheat-sheet.html" target="_blank">ECharts Cheat Sheet</a>. It's a great starting point to get familiar with the terms.
-        </p>
-        <hr />
-        <p>
-          <b>Question: The visualization failes loading and prints out "Error rendering Visualization Toolbox visualization"</b>
-        </p>
-        <p>
-          Answer: We suggest the following steps to solve this issue: First copy your options code to <a href="https://echarts.apache.org/examples/en/editor.html" target="_blank">echarts example page (IDE)</a> to check if there is an sytax error in your options.
-          Second check the data mapping: seriesDataIndexBinding, xAxisDataIndexBinding. 
-        </p>
-        <hr />
-        <p>
-          <b>Question: Does visualization toolbox support Dashboard Studio?</b>
-        </p>
-        <p>
-          Answer: As Dashboard Studio does no support custom visualizations, the visualization toolki is not supported in Dashboard Studio.
-        </p>
-        <hr />
-        <p>
-          <b>Question: Does visualization toolbox support Splunk Mobile?</b>
-        </p>
-        <p>
-          Answer: As Splunk Mobile app does no support custom visualizations, the visualization toolbox is not supported using Splunk Mobile.
-        </p>
-        <hr />
-        <p>
-          <b>Question: I want to use visualization toolbox within my own business critial app. Do you have support offerings?</b>
-        </p>
-        <p>
-          Answer: Generally speaking the app is free to use. You can connect to us using the <a href="https://github.com/hman-78/visualization_toolbox/issues" target="_blank">github issue tracker</a>. We will try to answer your questions as soon as possible.
-          If this is not enough for you, we offer paid support, consulting and training for the app. Please contact us via email: visualization_toolbox@web.de.
-        </p>
-        <hr />
-        <p>
-          <b>Question: Is visualization toolbox running on Splunk Cloud?</b>
-        </p>
-        <p>
-          Answer: Yes, we tested it on Splunk Cloud. If you find any issues, please let us know via <a href="https://github.com/hman-78/visualization_toolbox/issues" target="_blank">github issue tracker</a>.
-        </p>
-        <hr />
-        <p>
-          <b>Question: I need feature XYZ in my chart. How do I configure it?</b>
-        </p>
-        <p>
-          Answer: We suggest using <a href="https://echarts.apache.org/examples/en/editor.html" target="_blank">ECharts example page (IDE)</a> and <a href="https://echarts.apache.org/en/option.html#title">Chart Option Documentation</a> to create your chart first. 
-          Then copy the option code into the visualization toolbox.
+          Check out the <a href="https://echarts.apache.org/en/cheat-sheet.html" target="_blank">ECharts Cheat Sheet</a>. It's a good map of the terminology. Then work through <a href="/app/visualization_toolbox/tutorial_1">Tutorial 1</a> and <a href="/app/visualization_toolbox/tutorial_2">Tutorial 2</a> for hands-on basics.
         </p>
 
-    </html>
-</panel>
-</row>
+        <hr />
+
+        <p>
+          <b>Q: What dataType options are available?</b>
+        </p>
+        <p>
+          Four modes are supported via the <code>visualization_toolbox.hman.dataType</code> option:
+        </p>
+        <table class="mytableclass">
+          <tr><td><code>Custom</code></td><td>Full Apache ECharts option object — any chart type ECharts supports. See <a href="/app/visualization_toolbox/tutorial_1">Tutorials 1–8</a>.</td></tr>
+          <tr><td><code>SimpleBoxplot</code></td><td>One SPL row per box (name, lower, Q1, median, Q3, upper, outliers). See <a href="/app/visualization_toolbox/tutorial_9">Tutorial 9</a>.</td></tr>
+          <tr><td><code>Boxplot</code></td><td>Multi-series grouped boxplots via a transposed 8-row table. See <a href="/app/visualization_toolbox/tutorial_10">Tutorial 10</a>.</td></tr>
+          <tr><td><code>Timeline</code></td><td>Gantt-style chart with automatic axis/legend construction. See <a href="/app/visualization_toolbox/tutorial_11">Tutorial 11</a>.</td></tr>
+        </table>
+
+        <hr />
+
+        <p>
+          <b>Q: The visualization fails with "Error rendering Visualization Toolbox visualization".</b>
+        </p>
+        <p>
+          For <code>Custom</code> mode: paste your option string into the <a href="https://echarts.apache.org/examples/en/editor.html" target="_blank">ECharts example editor</a> to catch syntax errors first. Then check your <code>seriesDataIndexBinding</code> and <code>xAxisDataIndexBinding</code> values against the column indices your search actually returns.
+        </p>
+        <p>
+          For <code>SimpleBoxplot</code>: confirm the search returns exactly 6 or 7 columns in the correct order, and that the option string defines at least <code>xAxis: {}</code>.
+        </p>
+        <p>
+          For <code>Boxplot</code>: confirm the search returns exactly 8 rows after <code>| sort seq</code>. Row 7 must contain the number of unique category values — if this is wrong the builder will misgroup the boxes.
+        </p>
+        <p>
+          For <code>Timeline</code>: confirm columns 0 and 1 are Unix timestamps in <b>seconds</b> (not milliseconds). <code>now()</code> and <code>relative_time()</code> return seconds; multiply by 1000 if your source already provides milliseconds.
+        </p>
+
+        <hr />
+
+        <p>
+          <b>Q: My SimpleBoxplot shows phantom scatter points at y=0.</b>
+        </p>
+        <p>
+          The outlier column (index 6) contains an empty string <code>""</code> instead of a true null. Use <code>| eval outliers=null()</code> for rows that have no outliers. An empty string passes the null-check in the builder and gets parsed as <code>0</code>.
+        </p>
+
+        <hr />
+
+        <p>
+          <b>Q: My multi-series Boxplot renders in the wrong order or boxes are missing.</b>
+        </p>
+        <p>
+          Add <code>| eval seq=N</code> to each sub-search and <code>| sort seq</code> before the final <code>| table</code>. Multiple <code>| makeresults</code> sub-searches share the same <code>_time</code>, so Splunk's row ordering is non-deterministic without an explicit sort key.
+        </p>
+
+        <hr />
+
+        <p>
+          <b>Q: Timeline splitByHour shows no data or a blank chart.</b>
+        </p>
+        <p>
+          <code>timeline_splitByHour=true</code> requires the dashboard to be a <code>&lt;form&gt;</code> with a time picker whose <b>token is exactly <code>time_range</code></b>. The builder reads the <code>time_range.earliest</code> and <code>time_range.latest</code> tokens from the Splunk token model to build the hourly y-axis — any other token name is ignored and the chart renders blank. The search element must also include <code>&lt;earliest&gt;$time_range.earliest$&lt;/earliest&gt;</code> and <code>&lt;latest&gt;$time_range.latest$&lt;/latest&gt;</code>. Also confirm the time range is 24 hours or less.
+        </p>
+
+        <hr />
+
+        <p>
+          <b>Q: Does visualization toolbox support Dashboard Studio?</b>
+        </p>
+        <p>
+          No. Dashboard Studio does not support custom visualizations, so the visualization toolbox is not available there.
+        </p>
+
+        <hr />
+
+        <p>
+          <b>Q: Does visualization toolbox support Splunk Mobile?</b>
+        </p>
+        <p>
+          No. The Splunk Mobile app does not support custom visualizations.
+        </p>
+
+        <hr />
+
+        <p>
+          <b>Q: Is visualization toolbox running on Splunk Cloud?</b>
+        </p>
+        <p>
+          Yes, it has been tested on Splunk Cloud. If you find any issues please report them via the <a href="https://github.com/hman-78/visualization_toolbox/issues" target="_blank">GitHub issue tracker</a>.
+        </p>
+
+        <hr />
+
+        <p>
+          <b>Q: I need a specific feature in my chart. How do I configure it?</b>
+        </p>
+        <p>
+          Use the <a href="https://echarts.apache.org/examples/en/editor.html" target="_blank">ECharts example editor</a> to build and test your option object, then copy it into the <code>visualization_toolbox.hman.option</code> field. The <a href="https://echarts.apache.org/en/option.html" target="_blank">ECharts option reference</a> documents every property.
+        </p>
+
+        <hr />
+
+        <p>
+          <b>Q: I want to use visualization toolbox in a business-critical app. Is support available?</b>
+        </p>
+        <p>
+          The app is free to use. Community support is available via the <a href="https://github.com/hman-78/visualization_toolbox/issues" target="_blank">GitHub issue tracker</a>. For paid support, consulting, or training contact us at <a href="mailto:visualization_toolbox@web.de">visualization_toolbox@web.de</a>.
+        </p>
+
+      </html>
+    </panel>
+  </row>
 </dashboard>

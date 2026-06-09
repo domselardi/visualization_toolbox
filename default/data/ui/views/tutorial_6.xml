@@ -1,0 +1,475 @@
+<dashboard version="1.1" stylesheet="tutorial.css">
+  <label>6. Gauge and Radar Charts</label>
+  <row>
+    <panel>
+      <html>
+        <h1>Gauge and Radar Charts</h1>
+        <p>
+          Both chart types are ideal for showing performance metrics against defined thresholds or
+          across multiple dimensions simultaneously — common requirements in operational and security
+          dashboards.
+        </p>
+
+        <hr />
+
+        <h1>Gauge Chart</h1>
+        <p>
+          A gauge renders a single numeric value as a needle on a dial. The key properties are
+          <code>min</code>, <code>max</code>, and the <code>data</code> array containing a single
+          <code>{value: N, name: 'label'}</code> object.
+        </p>
+        <p>
+          Use <code>axisLine.lineStyle.color</code> to define threshold-coloured arcs. Each entry is
+          <code>[endFraction, 'color']</code> where the fraction is a proportion of the full arc
+          (0.0 – 1.0). The example below colours the arc green up to 60%, amber to 85%, and red beyond:
+        </p>
+<pre><code><![CDATA[axisLine: {
+  lineStyle: {
+    width: 20,
+    color: [
+      [0.6, '#5cb85c'],  // 0 – 60% : green
+      [0.85, '#f0ad4e'], // 60 – 85%: amber
+      [1,    '#d9534f']  // 85 – 100%: red
+    ]
+  }
+}]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'CPU Utilisation',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: '{a}: {c}%'
+  },
+  series: [
+    {
+      name: 'CPU',
+      type: 'gauge',
+      min: 0,
+      max: 100,
+      splitNumber: 10,
+      axisLine: {
+        lineStyle: {
+          width: 20,
+          color: [
+            [0.6,  '#5cb85c'],
+            [0.85, '#f0ad4e'],
+            [1,    '#d9534f']
+          ]
+        }
+      },
+      pointer: {
+        itemStyle: {
+          color: 'auto'
+        }
+      },
+      axisTick: {
+        distance: -25,
+        length: 8,
+        lineStyle: { color: '#fff', width: 2 }
+      },
+      splitLine: {
+        distance: -30,
+        length: 20,
+        lineStyle: { color: '#fff', width: 4 }
+      },
+      axisLabel: {
+        color: 'inherit',
+        distance: 35,
+        fontSize: 12
+      },
+      detail: {
+        valueAnimation: true,
+        formatter: '{value}%',
+        color: 'inherit',
+        fontSize: 22
+      },
+      data: [
+        { value: 73.4, name: 'CPU %' }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'CPU Utilisation',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: '{a}: {c}%'
+  },
+  series: [
+    {
+      name: 'CPU',
+      type: 'gauge',
+      min: 0,
+      max: 100,
+      splitNumber: 10,
+      axisLine: {
+        lineStyle: {
+          width: 20,
+          color: [
+            [0.6,  '#5cb85c'],
+            [0.85, '#f0ad4e'],
+            [1,    '#d9534f']
+          ]
+        }
+      },
+      pointer: {
+        itemStyle: {
+          color: 'auto'
+        }
+      },
+      axisTick: {
+        distance: -25,
+        length: 8,
+        lineStyle: { color: '#fff', width: 2 }
+      },
+      splitLine: {
+        distance: -30,
+        length: 20,
+        lineStyle: { color: '#fff', width: 4 }
+      },
+      axisLabel: {
+        color: 'inherit',
+        distance: 35,
+        fontSize: 12
+      },
+      detail: {
+        valueAnimation: true,
+        formatter: '{value}%',
+        color: 'inherit',
+        fontSize: 22
+      },
+      data: [
+        { value: 73.4, name: 'CPU %' }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Multi-needle Gauge</h1>
+        <p>
+          Add more entries to the <code>data</code> array to render multiple needles on the same
+          dial. This is useful for comparing related metrics side by side — for example, showing
+          CPU, memory, and disk utilisation on one gauge:
+        </p>
+<pre><code><![CDATA[data: [
+  { value: 73, name: 'CPU' },
+  { value: 58, name: 'Memory' },
+  { value: 41, name: 'Disk' }
+]]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'System Resources',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: '{b}: {c}%'
+  },
+  series: [
+    {
+      type: 'gauge',
+      min: 0,
+      max: 100,
+      splitNumber: 5,
+      radius: '80%',
+      axisLine: {
+        lineStyle: {
+          width: 15,
+          color: [
+            [0.6,  '#5cb85c'],
+            [0.85, '#f0ad4e'],
+            [1,    '#d9534f']
+          ]
+        }
+      },
+      splitLine: {
+        distance: -18,
+        length: 15,
+        lineStyle: { color: '#fff', width: 3 }
+      },
+      axisTick: {
+        distance: -12,
+        length: 8,
+        lineStyle: { color: '#fff', width: 2 }
+      },
+      axisLabel: {
+        distance: 20,
+        fontSize: 11,
+        color: '#555'
+      },
+      anchor: {
+        show: true,
+        showAbove: true,
+        size: 18,
+        itemStyle: { borderWidth: 8 }
+      },
+      detail: {
+        valueAnimation: true,
+        formatter: '{value}%',
+        fontSize: 14,
+        offsetCenter: [0, '70%']
+      },
+      data: [
+        { value: 73, name: 'CPU' },
+        { value: 58, name: 'Memory' },
+        { value: 41, name: 'Disk' }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'System Resources',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: '{b}: {c}%'
+  },
+  series: [
+    {
+      type: 'gauge',
+      min: 0,
+      max: 100,
+      splitNumber: 5,
+      radius: '80%',
+      axisLine: {
+        lineStyle: {
+          width: 15,
+          color: [
+            [0.6,  '#5cb85c'],
+            [0.85, '#f0ad4e'],
+            [1,    '#d9534f']
+          ]
+        }
+      },
+      splitLine: {
+        distance: -18,
+        length: 15,
+        lineStyle: { color: '#fff', width: 3 }
+      },
+      axisTick: {
+        distance: -12,
+        length: 8,
+        lineStyle: { color: '#fff', width: 2 }
+      },
+      axisLabel: {
+        distance: 20,
+        fontSize: 11,
+        color: '#555'
+      },
+      anchor: {
+        show: true,
+        showAbove: true,
+        size: 18,
+        itemStyle: { borderWidth: 8 }
+      },
+      detail: {
+        valueAnimation: true,
+        formatter: '{value}%',
+        fontSize: 14,
+        offsetCenter: [0, '70%']
+      },
+      data: [
+        { value: 73, name: 'CPU' },
+        { value: 58, name: 'Memory' },
+        { value: 41, name: 'Disk' }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">380</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Radar / Spider Chart</h1>
+        <p>
+          A radar chart shows values across multiple named axes radiating from a centre point. Define
+          the axes in the <code>radar.indicator</code> array, each with a <code>name</code> and a
+          <code>max</code>. Each series entry holds an array of values in the same order as the
+          indicators.
+        </p>
+        <p>
+          Multiple data entries are rendered as overlapping polygons, making it easy to compare
+          profiles — for example, two environments or two time periods:
+        </p>
+<pre><code><![CDATA[radar: {
+  indicator: [
+    { name: 'CPU',        max: 100 },
+    { name: 'Memory',     max: 100 },
+    { name: 'Disk I/O',   max: 100 },
+    { name: 'Network',    max: 100 },
+    { name: 'Error Rate', max: 100 }
+  ]
+},
+series: [{
+  type: 'radar',
+  data: [
+    { value: [80, 65, 72, 55, 5],  name: 'Production' },
+    { value: [60, 45, 50, 40, 15], name: 'Staging'    }
+  ]
+}]]]></code></pre>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Environment Performance Profile',
+    left: 'center'
+  },
+  tooltip: {},
+  legend: {
+    data: ['Production', 'Staging'],
+    bottom: '2%'
+  },
+  radar: {
+    indicator: [
+      { name: 'CPU',        max: 100 },
+      { name: 'Memory',     max: 100 },
+      { name: 'Disk I/O',   max: 100 },
+      { name: 'Network',    max: 100 },
+      { name: 'Latency',    max: 100 },
+      { name: 'Error Rate', max: 100 }
+    ],
+    radius: '65%'
+  },
+  series: [
+    {
+      name: 'Performance',
+      type: 'radar',
+      data: [
+        {
+          value: [80, 65, 72, 55, 20, 5],
+          name: 'Production',
+          areaStyle: { opacity: 0.2 }
+        },
+        {
+          value: [60, 45, 50, 40, 35, 15],
+          name: 'Staging',
+          areaStyle: { opacity: 0.2 }
+        }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Custom</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Environment Performance Profile',
+    left: 'center'
+  },
+  tooltip: {},
+  legend: {
+    data: ['Production', 'Staging'],
+    bottom: '2%'
+  },
+  radar: {
+    indicator: [
+      { name: 'CPU',        max: 100 },
+      { name: 'Memory',     max: 100 },
+      { name: 'Disk I/O',   max: 100 },
+      { name: 'Network',    max: 100 },
+      { name: 'Latency',    max: 100 },
+      { name: 'Error Rate', max: 100 }
+    ],
+    radius: '65%'
+  },
+  series: [
+    {
+      name: 'Performance',
+      type: 'radar',
+      data: [
+        {
+          value: [80, 65, 72, 55, 20, 5],
+          name: 'Production',
+          areaStyle: { opacity: 0.2 }
+        },
+        {
+          value: [60, 45, 50, 40, 35, 15],
+          name: 'Staging',
+          areaStyle: { opacity: 0.2 }
+        }
+      ]
+    }
+  ]
+};
+        </option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+    </panel>
+  </row>
+</dashboard>
