@@ -1,0 +1,492 @@
+<form version="1.1" stylesheet="tutorial.css">
+  <label>11. Timeline — Production Shift Monitor</label>
+  <fieldset submitButton="false">
+    <input type="time" token="time_range" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default><earliest>-8h@h</earliest><latest>@h</latest></default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+        <h1>Timeline</h1>
+        <p>
+          The <b>Timeline</b> dataType renders a horizontal Gantt-style chart where each row is a
+          named entity (machine, process, operator) and each coloured rectangle is a timed event.
+          Activate it with <code>dataType=Timeline</code>.
+        </p>
+        <p>
+          The visualization handles axis construction, legend creation, colour assignment, and
+          event rendering automatically. You only supply the search data and, optionally, an
+          <code>option</code> string to customise the tooltip, grid layout, or dataZoom.
+        </p>
+
+        <hr />
+
+        <h1>Required data format</h1>
+        <p>
+          The search must return these columns in order:
+        </p>
+        <table class="mytableclass">
+          <tr><td><b>Index</b></td><td><b>Column</b></td><td><b>Description</b></td></tr>
+          <tr><td>0</td><td><code>start_time</code></td><td>Event start — Unix timestamp in <b>seconds</b></td></tr>
+          <tr><td>1</td><td><code>end_time</code></td><td>Event end — Unix timestamp in <b>seconds</b></td></tr>
+          <tr><td>2</td><td><code>internal_name</code></td><td>Y-axis row label (e.g. machine name)</td></tr>
+          <tr><td>3</td><td><code>category</code></td><td>Legend/colour group (e.g. machine state)</td></tr>
+          <tr><td>4</td><td><code>fill_color</code></td><td><i>Optional</i> — hex/rgb colour; omit when using <code>timeline_useSplunkCategoricalColors=true</code></td></tr>
+        </table>
+        <p>
+          Timestamps must be <b>Unix seconds</b> (not milliseconds). Splunk functions
+          <code>now()</code>, <code>relative_time()</code>, and <code>strptime()</code> all return
+          seconds. The visualization multiplies them by 1000 internally for ECharts.
+        </p>
+
+        <hr />
+
+        <h1>Colour assignment</h1>
+        <table class="mytableclass">
+          <tr>
+            <td><b>Option</b></td>
+            <td><b>Behaviour</b></td>
+            <td><b>Columns required</b></td>
+          </tr>
+          <tr>
+            <td><code>timeline_useSplunkCategoricalColors=true</code></td>
+            <td>Auto-assigns one Splunk palette colour per unique <code>category</code> value</td>
+            <td>4 (no fill_color column)</td>
+          </tr>
+          <tr>
+            <td><code>timeline_useSplunkCategoricalColors=false</code> (default)</td>
+            <td>Reads colour from the 5th column. Falls back to palette for rows with an empty/invalid colour</td>
+            <td>5 (fill_color required)</td>
+          </tr>
+        </table>
+
+        <hr />
+
+        <h1>Factory example — 8-hour production shift</h1>
+        <p>
+          The search below simulates a production shift monitor for four machines:
+          CNC-01, CNC-02, Conveyor-01, and Press-01. Each machine transitions between
+          <b>Running</b>, <b>Idle</b>, <b>Maintenance</b>, and <b>Error</b> states throughout
+          the shift. The base time is anchored to 8 hours before the current hour so the chart
+          always shows the most recent shift window.
+        </p>
+<pre><code><![CDATA[| makeresults count=1 | eval b=relative_time(now(), "-8h@h")
+| eval start_time=b+0,     end_time=b+7200,  machine="CNC-01",     state="Running"
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+7200,  end_time=b+9000,  machine="CNC-01",     state="Maintenance"]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+9000,  end_time=b+28800, machine="CNC-01",     state="Running"     ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+10800, machine="CNC-02",     state="Running"     ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+10800, end_time=b+14400, machine="CNC-02",     state="Error"       ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+14400, end_time=b+28800, machine="CNC-02",     state="Running"     ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+3600,  machine="Conveyor-01",state="Running"     ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+3600,  end_time=b+5400,  machine="Conveyor-01",state="Idle"        ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+5400,  end_time=b+28800, machine="Conveyor-01",state="Running"     ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+21600, machine="Press-01",   state="Running"     ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+21600, end_time=b+25200, machine="Press-01",   state="Maintenance" ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+25200, end_time=b+28800, machine="Press-01",   state="Running"     ]
+| table start_time end_time machine state]]></code></pre>
+
+        <p>
+          Key points about the option string for Timeline:
+        </p>
+        <ul>
+          <li><code>xAxis</code>, <code>yAxis</code>, <code>series</code>, and <code>legend</code> are
+              built automatically — do not define them in the option unless you need to override defaults.</li>
+          <li>Add <code>dataZoom</code> to enable panning and zooming along the time axis.</li>
+          <li>Add <code>grid</code> to adjust margins. The <code>left</code> value controls the space
+              for y-axis machine labels — increase it for longer names.</li>
+          <li>The <code>tooltip</code> formatter receives a <code>params.data</code> object with
+              <code>name</code> (category), <code>value[2]</code> (internal_name),
+              <code>value[7]</code> (unix start in seconds), <code>value[8]</code> (unix end in seconds),
+              and <code>eventDurationInSeconds</code>.</li>
+        </ul>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=1 | eval b=relative_time(now(), "-8h@h")
+| eval start_time=b+0,     end_time=b+7200,  machine="CNC-01",      state="Running"
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+7200,  end_time=b+9000,  machine="CNC-01",      state="Maintenance"]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+9000,  end_time=b+28800, machine="CNC-01",      state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+10800, machine="CNC-02",      state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+10800, end_time=b+14400, machine="CNC-02",      state="Error"      ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+14400, end_time=b+28800, machine="CNC-02",      state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+3600,  machine="Conveyor-01", state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+3600,  end_time=b+5400,  machine="Conveyor-01", state="Idle"       ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+5400,  end_time=b+28800, machine="Conveyor-01", state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+21600, machine="Press-01",    state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+21600, end_time=b+25200, machine="Press-01",    state="Maintenance"]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+25200, end_time=b+28800, machine="Press-01",    state="Running"    ]
+| table start_time end_time machine state</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Timeline</option>
+        <option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>
+        <option name="visualization_toolbox.hman.timeline_bandHeight">36</option>
+        <option name="visualization_toolbox.hman.timeline_bandGap">6</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Production Shift — Machine State Monitor',
+    subtext: 'Last 8 hours',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: function (params) {
+      var d = params.data;
+      var durMin = Math.round(d.eventDurationInSeconds / 60);
+      return d.value[2] + ' — ' + d.name + ': ' + durMin + ' min';
+    }
+  },
+  grid: {
+    left: 130
+  },
+  dataZoom: [
+    { type: 'slider', start: 0, end: 100 },
+    { type: 'inside', start: 0, end: 100 }
+  ]
+};
+        </option>
+        <option name="height">560</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=1 | eval b=relative_time(now(), "-8h@h")
+| eval start_time=b+0,     end_time=b+7200,  machine="CNC-01",      state="Running"
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+7200,  end_time=b+9000,  machine="CNC-01",      state="Maintenance"]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+9000,  end_time=b+28800, machine="CNC-01",      state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+10800, machine="CNC-02",      state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+10800, end_time=b+14400, machine="CNC-02",      state="Error"      ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+14400, end_time=b+28800, machine="CNC-02",      state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+3600,  machine="Conveyor-01", state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+3600,  end_time=b+5400,  machine="Conveyor-01", state="Idle"       ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+5400,  end_time=b+28800, machine="Conveyor-01", state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+0,     end_time=b+21600, machine="Press-01",    state="Running"    ]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+21600, end_time=b+25200, machine="Press-01",    state="Maintenance"]
+| append [| makeresults count=1 | eval b=relative_time(now(),"-8h@h") | eval start_time=b+25200, end_time=b+28800, machine="Press-01",    state="Running"    ]
+| table start_time end_time machine state</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Timeline</option>
+        <option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>
+        <option name="visualization_toolbox.hman.timeline_bandHeight">36</option>
+        <option name="visualization_toolbox.hman.timeline_bandGap">6</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Production Shift — Machine State Monitor',
+    subtext: 'Last 8 hours',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: function (params) {
+      var d = params.data;
+      var durMin = Math.round(d.eventDurationInSeconds / 60);
+      return d.value[2] + ' — ' + d.name + ': ' + durMin + ' min';
+    }
+  },
+  grid: {
+    left: 130
+  },
+  dataZoom: [
+    { type: 'slider', start: 0, end: 100 },
+    { type: 'inside', start: 0, end: 100 }
+  ]
+};
+        </option>
+        <option name="height">560</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Custom fill colours</h1>
+        <p>
+          To control colours precisely, set
+          <code>timeline_useSplunkCategoricalColors=false</code> and provide a
+          <code>fill_color</code> fifth column with a valid hex or rgb value per row.
+          Rows with an empty or invalid colour fall back to the Splunk categorical palette
+          automatically.
+        </p>
+<pre><code><![CDATA[| eval fill_color=case(
+    state="Running",     "#5cb85c",
+    state="Idle",        "#f0ad4e",
+    state="Maintenance", "#337ab7",
+    state="Error",       "#d9534f",
+    1=1,                 ""
+  )
+| table start_time end_time machine state fill_color]]></code></pre>
+
+        <p>
+          And in the viz options:
+        </p>
+<pre><code><![CDATA[<option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">false</option>]]></code></pre>
+
+        <hr />
+        <h1>splitByHour mode</h1>
+        <p>
+          Setting <code>timeline_splitByHour=true</code> changes the layout: the y-axis becomes
+          hourly time slots and each machine's events are drawn as bars within those slots.
+          This lets you see — for each hour of the shift — which machines were active, idle,
+          or in maintenance, all on the same chart.
+        </p>
+        <p>
+          <b>Requirements:</b>
+        </p>
+        <ul>
+          <li>The dashboard must be a <code>&lt;form&gt;</code> with a time-range picker using <b><code>token="time_range"</code></b> (this page already has one — use the picker at the top).</li>
+          <li>The search element must bind <code>&lt;earliest&gt;$time_range.earliest$&lt;/earliest&gt;</code> and <code>&lt;latest&gt;$time_range.latest$&lt;/latest&gt;</code>. The builder reads the <code>time_range</code> token name specifically.</li>
+          <li>Maximum supported range is 24 hours. Wider ranges produce a warning.</li>
+        </ul>
+        <p>
+          The chart below works with the existing renderer without any JavaScript changes.
+          It creates a full-hour baseline event for each row, then overlays later state
+          changes inside selected hours. Keep the picker at 24 hours or less; the default
+          range shows the last eight complete hours.
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults
+| addinfo
+| eval range_start=case(isnum(info_min_time) AND info_min_time&gt;0, relative_time(info_min_time, "@h"), 1=1, relative_time(now(), "-8h@h"))
+| eval range_end=case(isnum(info_max_time) AND info_max_time&lt;=now(), relative_time(info_max_time, "@h"), 1=1, relative_time(now(), "@h"))
+| eval range_end=if(range_end&lt;=range_start, range_start+3600, range_end)
+| eval hour_count=ceil((range_end-range_start)/3600)
+| eval hour_count=if(hour_count&gt;24, 24, hour_count)
+| eval hour_index=mvrange(0, hour_count)
+| mvexpand hour_index
+| eval hour_start=range_start+(hour_index*3600), machine="Packaging-01"
+| eval segment=mvappend("Running,0,60,0", if(hour_index=2,"Maintenance,20,60,1",""), if(hour_index=4,"Idle,35,60,1",""), if(hour_index=6,"Error,5,53,1",""), if(hour_index=6,"Running,53,60,2",""))
+| mvexpand segment
+| where segment!=""
+| eval parts=split(segment,",")
+| eval state=mvindex(parts,0), start_min=tonumber(mvindex(parts,1)), end_min=tonumber(mvindex(parts,2)), draw_order=tonumber(mvindex(parts,3))
+| eval start_second=start_min*60, end_second=end_min*60
+| eval start_time=hour_start+(start_min*60), end_time=hour_start+(end_min*60)
+| where end_time&gt;start_time
+| sort 0 hour_index draw_order
+| table start_time end_time machine state hour_index start_second end_second</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Timeline</option>
+        <option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>
+        <option name="visualization_toolbox.hman.timeline_splitByHour">true</option>
+        <option name="visualization_toolbox.hman.timeline_bandHeight">32</option>
+        <option name="visualization_toolbox.hman.timeline_bandGap">8</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Production Shift - Split by Hour',
+    subtext: 'XML-only example: full-hour baseline events with ordered state overlays',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: function (params) {
+      var d = params.data;
+      var durMin = Math.floor(d.eventDurationInSeconds / 60);
+      var durSec = d.eventDurationInSeconds % 60;
+      var dur = durMin > 0 ? durMin + ' min ' + durSec + ' s' : durSec + ' s';
+      var start = new Date(d.value[10] * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      var end = new Date(d.value[11] * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return d.value[2] + ' - ' + d.name + ' | ' + start + '-' + end + ' | ' + dur;
+    }
+  },
+  toolbox: {
+    feature: {
+      dataZoom: { yAxisIndex: 'none', title: { zoom: 'Zoom', back: 'Reset zoom' } },
+      restore:  { title: 'Reset' },
+      saveAsImage: { title: 'Save' }
+    }
+  },
+  grid: {
+    left: 80,
+    right: 60,
+    bottom: 60
+  },
+  series: [
+    {
+      encode: {
+        x: ['start_second', 'end_second'],
+        y: 'hour_index'
+      },
+      renderItem: function (params, api) {
+        var bandHeight = 32;
+        var yIndex = api.value(4);
+        var start = api.coord([api.value(5), yIndex]);
+        var end = api.coord([api.value(6), yIndex]);
+        return {
+          type: 'rect',
+          shape: {
+            x: start[0],
+            y: start[1] - bandHeight / 2,
+            width: end[0] - start[0],
+            height: bandHeight
+          },
+          style: api.style({
+            fill: api.visual('color')
+          })
+        };
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">680</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults
+| addinfo
+| eval range_start=case(isnum(info_min_time) AND info_min_time&gt;0, relative_time(info_min_time, "@h"), 1=1, relative_time(now(), "-8h@h"))
+| eval range_end=case(isnum(info_max_time) AND info_max_time&lt;=now(), relative_time(info_max_time, "@h"), 1=1, relative_time(now(), "@h"))
+| eval range_end=if(range_end&lt;=range_start, range_start+3600, range_end)
+| eval hour_count=ceil((range_end-range_start)/3600)
+| eval hour_count=if(hour_count&gt;24, 24, hour_count)
+| eval hour_index=mvrange(0, hour_count)
+| mvexpand hour_index
+| eval hour_start=range_start+(hour_index*3600), machine="Packaging-01"
+| eval segment=mvappend("Running,0,60,0", if(hour_index=2,"Maintenance,20,60,1",""), if(hour_index=4,"Idle,35,60,1",""), if(hour_index=6,"Error,5,53,1",""), if(hour_index=6,"Running,53,60,2",""))
+| mvexpand segment
+| where segment!=""
+| eval parts=split(segment,",")
+| eval state=mvindex(parts,0), start_min=tonumber(mvindex(parts,1)), end_min=tonumber(mvindex(parts,2)), draw_order=tonumber(mvindex(parts,3))
+| eval start_second=start_min*60, end_second=end_min*60
+| eval start_time=hour_start+(start_min*60), end_time=hour_start+(end_min*60)
+| where end_time&gt;start_time
+| sort 0 hour_index draw_order
+| table start_time end_time machine state hour_index start_second end_second</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Timeline</option>
+        <option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>
+        <option name="visualization_toolbox.hman.timeline_splitByHour">true</option>
+        <option name="visualization_toolbox.hman.timeline_bandHeight">32</option>
+        <option name="visualization_toolbox.hman.timeline_bandGap">8</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Production Shift - Split by Hour',
+    subtext: 'XML-only example: full-hour baseline events with ordered state overlays',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    formatter: function (params) {
+      var d = params.data;
+      var durMin = Math.floor(d.eventDurationInSeconds / 60);
+      var durSec = d.eventDurationInSeconds % 60;
+      var dur = durMin > 0 ? durMin + ' min ' + durSec + ' s' : durSec + ' s';
+      var start = new Date(d.value[10] * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      var end = new Date(d.value[11] * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return d.value[2] + ' - ' + d.name + ' | ' + start + '-' + end + ' | ' + dur;
+    }
+  },
+  toolbox: {
+    feature: {
+      dataZoom: { yAxisIndex: 'none', title: { zoom: 'Zoom', back: 'Reset zoom' } },
+      restore:  { title: 'Reset' },
+      saveAsImage: { title: 'Save' }
+    }
+  },
+  grid: {
+    left: 80,
+    right: 60,
+    bottom: 60
+  },
+  series: [
+    {
+      encode: {
+        x: ['start_second', 'end_second'],
+        y: 'hour_index'
+      },
+      renderItem: function (params, api) {
+        var bandHeight = 32;
+        var yIndex = api.value(4);
+        var start = api.coord([api.value(5), yIndex]);
+        var end = api.coord([api.value(6), yIndex]);
+        return {
+          type: 'rect',
+          shape: {
+            x: start[0],
+            y: start[1] - bandHeight / 2,
+            width: end[0] - start[0],
+            height: bandHeight
+          },
+          style: api.style({
+            fill: api.visual('color')
+          })
+        };
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">680</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Band sizing</h1>
+        <p>
+          Two options control the visual density of the timeline:
+        </p>
+        <table class="mytableclass">
+          <tr><td><b>Option</b></td><td><b>Default</b></td><td><b>Description</b></td></tr>
+          <tr>
+            <td><code>timeline_bandHeight</code></td>
+            <td>32</td>
+            <td>Height in pixels of each event rectangle</td>
+          </tr>
+          <tr>
+            <td><code>timeline_bandGap</code></td>
+            <td>8</td>
+            <td>Vertical gap in pixels between rows</td>
+          </tr>
+        </table>
+        <p>
+          The chart canvas height is automatically computed as
+          <code>(bandHeight + bandGap) * numberOfRows + gridTop + gridBottom</code>.
+          Set the Splunk panel <code>height</code> option generously (e.g. <code>600</code>)
+          to ensure the full chart is visible without a scrollbar appearing inside the panel.
+        </p>
+
+        <hr />
+        <h1>Drilldown tokens</h1>
+        <p>
+          Clicking on a timeline rectangle sets the following Splunk tokens that can drive
+          linked searches or dashboard navigation:
+        </p>
+        <table class="mytableclass">
+          <tr><td><code>hman_ts_series</code></td><td>The <code>internal_name</code> value (machine name)</td></tr>
+          <tr><td><code>hman_ts_legend</code></td><td>The <code>category</code> value (state)</td></tr>
+          <tr><td><code>hman_ts_start_time</code></td><td>Event start (Unix seconds)</td></tr>
+          <tr><td><code>hman_ts_end_time</code></td><td>Event end (Unix seconds)</td></tr>
+          <tr><td><code>hman_ts_duration</code></td><td>Duration in seconds</td></tr>
+          <tr><td><code>hman_ts_color</code></td><td>Fill colour of the clicked rectangle</td></tr>
+        </table>
+      </html>
+
+    </panel>
+  </row>
+</form>

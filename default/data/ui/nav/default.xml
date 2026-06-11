@@ -6,6 +6,14 @@
     <view name="tutorial_1" />
     <view name="tutorial_2" />
     <view name="tutorial_3" />
+    <view name="tutorial_4" />
+    <view name="tutorial_5" />
+    <view name="tutorial_6" />
+    <view name="tutorial_7" />
+    <view name="tutorial_8" />
+    <view name="tutorial_9" />
+    <view name="tutorial_10" />
+    <view name="tutorial_11" />
     <view name="faq" />
   </collection>
 </nav>

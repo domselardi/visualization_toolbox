@@ -1,0 +1,294 @@
+<dashboard version="1.1" stylesheet="tutorial.css">
+  <label>9. SimpleBoxplot — Workstation Cycle Times</label>
+  <row>
+    <panel>
+      <html>
+        <h1>SimpleBoxplot</h1>
+        <p>
+          The <b>SimpleBoxplot</b> dataType lets you plot boxplot distributions directly from a
+          standard Splunk search result table — one row per box, no transposing required. Use
+          <code>dataType=SimpleBoxplot</code> to activate this builder.
+        </p>
+        <p>
+          The search must return between <b>6 or 7 columns</b> in this exact order:
+        </p>
+        <table class="mytableclass">
+          <tr><td><b>Column index</b></td><td><b>Field</b></td><td><b>Description</b></td></tr>
+          <tr><td>0</td><td><code>name</code></td><td>Label shown on the x-axis for this box</td></tr>
+          <tr><td>1</td><td><code>lower</code></td><td>Minimum (lower whisker)</td></tr>
+          <tr><td>2</td><td><code>Q1</code></td><td>First quartile (25th percentile)</td></tr>
+          <tr><td>3</td><td><code>median</code></td><td>Median (50th percentile)</td></tr>
+          <tr><td>4</td><td><code>Q3</code></td><td>Third quartile (75th percentile)</td></tr>
+          <tr><td>5</td><td><code>upper</code></td><td>Maximum (upper whisker)</td></tr>
+          <tr><td>6</td><td><code>outliers</code></td><td><i>(Optional)</i> Pipe-separated outlier values, e.g. <code>95.2|102.7</code></td></tr>
+        </table>
+        <p>
+          The option string <b>must</b> define at least <code>xAxis: {}</code> — the builder
+          populates <code>xAxis.data</code> from column 0. Any <code>series</code> defined in the
+          option is preserved; the boxplot series (and optional scatter outlier series) are appended.
+        </p>
+        <p>
+          To compute the five statistics in Splunk from raw measurements, use:
+        </p>
+<pre><code><![CDATA[| stats min(cycle_s) AS lower,
+        perc25(cycle_s) AS Q1,
+        median(cycle_s) AS median,
+        perc75(cycle_s) AS Q3,
+        max(cycle_s) AS upper
+  BY workstation
+| eval outliers=null()     ]]></code></pre>
+
+        <hr />
+
+        <h1>Factory example — workstation cycle times</h1>
+        <p>
+          The search below simulates a quality-control dataset for a production line:
+          five workstations, each with a distribution of per-part cycle times (seconds).
+          Two stations — Assembly and QC-Inspect — have outlier values shown as separate
+          scatter points above the whiskers.
+        </p>
+<pre><code><![CDATA[| makeresults count=1
+| eval station="Welding",      lower=38.2, Q1=42.5, median=46.1, Q3=50.8, upper=59.4
+| append [| makeresults count=1 | eval station="Assembly",     lower=55.1, Q1=61.3, median=65.7, Q3=71.2, upper=82.5, outliers="90.2|95.8"]
+| append [| makeresults count=1 | eval station="Paint-Booth",  lower=110.4, Q1=118.9, median=124.3, Q3=131.7, upper=145.2]
+| append [| makeresults count=1 | eval station="QC-Inspect",   lower=28.6, Q1=33.4, median=37.8, Q3=42.3, upper=52.1, outliers="58.3|63.1|68.7"]
+| append [| makeresults count=1 | eval station="Packaging",    lower=15.8, Q1=19.2, median=22.4, Q3=26.1, upper=32.7]
+| table station lower Q1 median Q3 upper outliers]]></code></pre>
+
+        <p>
+          Note: rows without an <code>outliers</code> field will have a <code>null</code> value for
+          column 6. The builder skips null outlier entries, so no phantom scatter points appear.
+          Always use <code>null()</code> (not empty string) for stations with no outliers.
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=1
+| eval station="Welding",      lower=38.2, Q1=42.5, median=46.1, Q3=50.8, upper=59.4
+| append [| makeresults count=1 | eval station="Assembly",     lower=55.1, Q1=61.3, median=65.7, Q3=71.2, upper=82.5, outliers="90.2|95.8"]
+| append [| makeresults count=1 | eval station="Paint-Booth",  lower=110.4, Q1=118.9, median=124.3, Q3=131.7, upper=145.2]
+| append [| makeresults count=1 | eval station="QC-Inspect",   lower=28.6, Q1=33.4, median=37.8, Q3=42.3, upper=52.1, outliers="58.3|63.1|68.7"]
+| append [| makeresults count=1 | eval station="Packaging",    lower=15.8, Q1=19.2, median=22.4, Q3=26.1, upper=32.7]
+| table station lower Q1 median Q3 upper outliers</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">SimpleBoxplot</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Workstation Cycle Time Distribution',
+    subtext: 'Production Line QC — seconds per part',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    axisPointer: { type: 'shadow' }
+  },
+  xAxis: {
+    type: 'category',
+    name: 'Workstation',
+    axisLabel: { rotate: 10 }
+  },
+  yAxis: {
+    type: 'value',
+    name: 'Cycle Time (s)',
+    splitArea: { show: true }
+  },
+  series: []
+};
+        </option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=1
+| eval station="Welding",      lower=38.2, Q1=42.5, median=46.1, Q3=50.8, upper=59.4
+| append [| makeresults count=1 | eval station="Assembly",     lower=55.1, Q1=61.3, median=65.7, Q3=71.2, upper=82.5, outliers="90.2|95.8"]
+| append [| makeresults count=1 | eval station="Paint-Booth",  lower=110.4, Q1=118.9, median=124.3, Q3=131.7, upper=145.2]
+| append [| makeresults count=1 | eval station="QC-Inspect",   lower=28.6, Q1=33.4, median=37.8, Q3=42.3, upper=52.1, outliers="58.3|63.1|68.7"]
+| append [| makeresults count=1 | eval station="Packaging",    lower=15.8, Q1=19.2, median=22.4, Q3=26.1, upper=32.7]
+| table station lower Q1 median Q3 upper outliers</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">SimpleBoxplot</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Workstation Cycle Time Distribution',
+    subtext: 'Production Line QC — seconds per part',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    axisPointer: { type: 'shadow' }
+  },
+  xAxis: {
+    type: 'category',
+    name: 'Workstation',
+    axisLabel: { rotate: 10 }
+  },
+  yAxis: {
+    type: 'value',
+    name: 'Cycle Time (s)',
+    splitArea: { show: true }
+  },
+  series: []
+};
+        </option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+      <html>
+        <hr />
+        <h1>Adding a reference line</h1>
+        <p>
+          Because the builder appends to the existing <code>option.series</code> array, you can
+          pre-populate it with additional series such as a target-time reference line. Declare the
+          line series before the boxplot series and it will appear behind the boxes:
+        </p>
+<pre><code><![CDATA[series: [
+  {
+    name: 'Takt Time Target',
+    type: 'line',
+    markLine: {
+      symbol: 'none',
+      data: [{ type: 'average', name: 'Avg' }]
+    },
+    data: []
+  }
+]]]></code></pre>
+
+        <p>
+          Or add a fixed threshold using <code>markLine</code> directly on the boxplot series
+          via the ECharts option after the builder has run — the builder does not overwrite
+          <code>markLine</code> properties already present in the option template:
+        </p>
+<pre><code><![CDATA[yAxis: {
+  type: 'value',
+  name: 'Cycle Time (s)',
+  splitArea: { show: true }
+},
+series: [
+  {
+    type: 'boxplot',
+    markLine: {
+      data: [{ yAxis: 60, name: 'SLA target: 60 s', label: { position: 'end' } }],
+      lineStyle: { color: '#d9534f', type: 'dashed' }
+    }
+  }
+]]]></code></pre>
+
+        <p>
+          The builder detects the template entry (series[0]) and assigns the boxplot data to it,
+          preserving the <code>markLine</code> definition. Outliers are always appended as an
+          additional scatter series.
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=1
+| eval station="Welding",      lower=38.2, Q1=42.5, median=46.1, Q3=50.8, upper=59.4
+| append [| makeresults count=1 | eval station="Assembly",     lower=55.1, Q1=61.3, median=65.7, Q3=71.2, upper=82.5, outliers="90.2|95.8"]
+| append [| makeresults count=1 | eval station="Paint-Booth",  lower=110.4, Q1=118.9, median=124.3, Q3=131.7, upper=145.2]
+| append [| makeresults count=1 | eval station="QC-Inspect",   lower=28.6, Q1=33.4, median=37.8, Q3=42.3, upper=52.1, outliers="58.3|63.1|68.7"]
+| append [| makeresults count=1 | eval station="Packaging",    lower=15.8, Q1=19.2, median=22.4, Q3=26.1, upper=32.7]
+| table station lower Q1 median Q3 upper outliers</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">SimpleBoxplot</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Cycle Times with SLA Reference Line',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    axisPointer: { type: 'shadow' }
+  },
+  xAxis: {
+    type: 'category',
+    name: 'Workstation',
+    axisLabel: { rotate: 10 }
+  },
+  yAxis: {
+    type: 'value',
+    name: 'Cycle Time (s)',
+    splitArea: { show: true }
+  },
+  series: [
+    {
+      type: 'boxplot',
+      markLine: {
+        silent: true,
+        data: [{ yAxis: 60, name: 'SLA 60 s' }],
+        lineStyle: { color: '#d9534f', type: 'dashed', width: 2 },
+        label: { position: 'end', formatter: 'SLA 60 s', color: '#d9534f' }
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults count=1
+| eval station="Welding",      lower=38.2, Q1=42.5, median=46.1, Q3=50.8, upper=59.4
+| append [| makeresults count=1 | eval station="Assembly",     lower=55.1, Q1=61.3, median=65.7, Q3=71.2, upper=82.5, outliers="90.2|95.8"]
+| append [| makeresults count=1 | eval station="Paint-Booth",  lower=110.4, Q1=118.9, median=124.3, Q3=131.7, upper=145.2]
+| append [| makeresults count=1 | eval station="QC-Inspect",   lower=28.6, Q1=33.4, median=37.8, Q3=42.3, upper=52.1, outliers="58.3|63.1|68.7"]
+| append [| makeresults count=1 | eval station="Packaging",    lower=15.8, Q1=19.2, median=22.4, Q3=26.1, upper=32.7]
+| table station lower Q1 median Q3 upper outliers</query>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">SimpleBoxplot</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  title: {
+    text: 'Cycle Times with SLA Reference Line',
+    left: 'center'
+  },
+  tooltip: {
+    trigger: 'item',
+    axisPointer: { type: 'shadow' }
+  },
+  xAxis: {
+    type: 'category',
+    name: 'Workstation',
+    axisLabel: { rotate: 10 }
+  },
+  yAxis: {
+    type: 'value',
+    name: 'Cycle Time (s)',
+    splitArea: { show: true }
+  },
+  series: [
+    {
+      type: 'boxplot',
+      markLine: {
+        silent: true,
+        data: [{ yAxis: 60, name: 'SLA 60 s' }],
+        lineStyle: { color: '#d9534f', type: 'dashed', width: 2 },
+        label: { position: 'end', formatter: 'SLA 60 s', color: '#d9534f' }
+      }
+    }
+  ]
+};
+        </option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
+      </html>
+
+    </panel>
+  </row>
+</dashboard>
