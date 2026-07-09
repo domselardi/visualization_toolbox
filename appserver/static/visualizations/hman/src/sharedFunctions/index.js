@@ -160,8 +160,12 @@ const _sharedFunctions = {
     return true;
   },
   convertUnixTimestamp: function (strTimestamp) {
-    if (_sharedFunctions.isValidUnixTimestamp(strTimestamp))
-      return parseInt(strTimestamp);
+    if (!_sharedFunctions.isValidUnixTimestamp(strTimestamp)) {
+      return undefined;
+    }
+
+    const timestamp = parseInt(strTimestamp, 10);
+    return timestamp < 1e12 ? timestamp * 1000 : timestamp;
   },
   extractDate: function (strTimestamp) {
     strTimestamp = _sharedFunctions.convertUnixTimestamp(strTimestamp);
