@@ -66,7 +66,7 @@ const _sharedFunctions = {
       }
       // Regex to detect patterns like "5*," "[5;5*;0]" or any wildcard prefixed by an integer
       const dynamicRangeRegex = /^\d+\*$/;
-      const wildcardTupleRegex = /^\[\d+(;\d+\*?)*\]$/;
+      const wildcardTupleRegex = /^\[(\d+\*?;)*\d+\*(;\d+\*?)*\]$/;
       // Check if any segment matches the patterns
       const hasDynamicRangeOrWildcard = segments.some(segment =>
         dynamicRangeRegex.test(segment) || wildcardTupleRegex.test(segment)

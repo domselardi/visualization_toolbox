@@ -104,13 +104,14 @@ const _buildCustomOption = function (data, config) {
     for (let j = 0; j < data.rows.length; j++) {
       const dataRow = data.rows[j];
       const indexMap = theProcessedSeries[i];
+      let seriesDataEntry;
       if (Array.isArray(indexMap)) {
         const tmpGeneratedData = this._sharedFunctions.extractElementsFromArray(dataRow, indexMap);
-        tmpSeriesObj.data.push({value: tmpGeneratedData});
+        seriesDataEntry = {value: tmpGeneratedData};
       } else if (Number.isInteger(indexMap)) {
-        tmpSeriesObj.data.push({
+        seriesDataEntry = {
           value: dataRow[indexMap]
-        });
+        };
       } else {
         throw `The indexMap has an expected value: ${indexMap}. Check configSeriesDataIndexBinding definition!`;
       }
@@ -118,9 +119,12 @@ const _buildCustomOption = function (data, config) {
       // if yes map the color of the given row to the item style of the 
       // given series.data entry
       if (!isNaN(echartProps.seriesColorDataIndexBinding)) {
-        tmpSeriesObj['itemStyle'] = {};
-        tmpSeriesObj.itemStyle.color = data.rows[i][echartProps.seriesColorDataIndexBinding];
+        seriesDataEntry.itemStyle = {
+          ...(seriesDataEntry.itemStyle || {}),
+          color: dataRow[echartProps.seriesColorDataIndexBinding],
+        };
       }
+      tmpSeriesObj.data.push(seriesDataEntry);
     }
     
     if(echartHasDynamicSeries) {
