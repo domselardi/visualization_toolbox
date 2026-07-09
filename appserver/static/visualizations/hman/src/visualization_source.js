@@ -58,7 +58,6 @@ const _setSplunkMessages = require('./setSplunkMessages')
 const _setupView = require('./setupView')
 const _sharedFunctions = require('./sharedFunctions')
 const _updateView = require('./updateView');
-const PrivateVariables = require('./privateVars');
 
 define([
 	'jquery',
@@ -76,9 +75,7 @@ define([
 		echarts, // eslint-disable-line no-unused-vars
 		mqtt, // eslint-disable-line no-unused-vars
 	) {
-		const scopedVariables = new PrivateVariables();
 		return SplunkVisualizationBase.extend({
-			scopedVariables,
 			_buildBoxplotOption: _buildBoxplotOption,
 			_buildCustomOption: _buildCustomOption,
 			_buildTimelineOption: _buildTimelineOption,
