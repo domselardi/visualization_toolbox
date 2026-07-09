@@ -67,7 +67,7 @@ const _buildSimpleBoxplotOption = function (data, config) {
     var dataElement = {};
     dataElement["name"] = data.rows[i][0];
     dataElement["value"] = [];
-    for (let j = 1; j < 7; j++) {
+    for (let j = 1; j < 6; j++) {
       dataElement.value.push(data.rows[i][j]);
     }
     serie.data.push(dataElement);
