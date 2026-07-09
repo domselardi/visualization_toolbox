@@ -13,20 +13,25 @@ const _parseOption = function (configOption) {
     return null;
   }
   var option = {};
+  var parsedConfigOption = "";
   // check if there is still a unreplaced $token$ in the config
   for (let i = 0; i < configOption.length; i++) {
-    let character = configOption.charAt(i);
-    if (character == '$' && !i !== configOption.length) {
-      // there is a $ in the config and it is not escaped
-      // with a second $
-      let nextCharacter = configOption.charAt(i + 1);
-      if (!(nextCharacter == '$')) {
-        console.log("configOption contains unresolved token. Ignoring option.");
-        return null;
-      }
+    const character = configOption.charAt(i);
+    if (character !== '$') {
+      parsedConfigOption += character;
+      continue;
     }
+
+    if (configOption.charAt(i + 1) === '$') {
+      parsedConfigOption += '$';
+      i++;
+      continue;
+    }
+
+    console.log("configOption contains unresolved token. Ignoring option.");
+    return null;
   }
-  eval("option =" + configOption);
+  eval("option =" + parsedConfigOption);
   console.log("configOption does not contain unresolved tokens. Using option.")
   return option;
 }
