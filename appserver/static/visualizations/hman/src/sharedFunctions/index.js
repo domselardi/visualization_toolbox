@@ -382,8 +382,8 @@ const _sharedFunctions = {
             startDow = arg; // explicit @w0, @w1, etc.
           } else {
             // Infer from locale: US = Sunday (0), most EU = Monday (1)
-            const firstDayGuess = new Intl.Locale(tmpLocaleOption).weekInfo?.firstDay ?? "mon";
-            startDow = firstDayGuess === "sun" ? 0 : 1;
+            const firstDay = new Intl.Locale(tmpLocaleOption).weekInfo?.firstDay ?? 1;
+            startDow = firstDay === 7 ? 0 : firstDay;
           }
           const diff = (dow - startDow + 7) % 7;
           d.setHours(0, 0, 0, 0);
