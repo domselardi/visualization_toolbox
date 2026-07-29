@@ -66,7 +66,7 @@ const _sharedFunctions = {
       }
       // Regex to detect patterns like "5*," "[5;5*;0]" or any wildcard prefixed by an integer
       const dynamicRangeRegex = /^\d+\*$/;
-      const wildcardTupleRegex = /^\[\d+(;\d+\*?)*\]$/;
+      const wildcardTupleRegex = /^\[(\d+\*?;)*\d+\*(;\d+\*?)*\]$/;
       // Check if any segment matches the patterns
       const hasDynamicRangeOrWildcard = segments.some(segment =>
         dynamicRangeRegex.test(segment) || wildcardTupleRegex.test(segment)
@@ -160,8 +160,12 @@ const _sharedFunctions = {
     return true;
   },
   convertUnixTimestamp: function (strTimestamp) {
-    if (_sharedFunctions.isValidUnixTimestamp(strTimestamp))
-      return parseInt(strTimestamp);
+    if (!_sharedFunctions.isValidUnixTimestamp(strTimestamp)) {
+      return undefined;
+    }
+
+    const timestamp = parseInt(strTimestamp, 10);
+    return timestamp < 1e12 ? timestamp * 1000 : timestamp;
   },
   extractDate: function (strTimestamp) {
     strTimestamp = _sharedFunctions.convertUnixTimestamp(strTimestamp);
@@ -378,8 +382,8 @@ const _sharedFunctions = {
             startDow = arg; // explicit @w0, @w1, etc.
           } else {
             // Infer from locale: US = Sunday (0), most EU = Monday (1)
-            const firstDayGuess = new Intl.Locale(tmpLocaleOption).weekInfo?.firstDay ?? "mon";
-            startDow = firstDayGuess === "sun" ? 0 : 1;
+            const firstDay = new Intl.Locale(tmpLocaleOption).weekInfo?.firstDay ?? 1;
+            startDow = firstDay === 7 ? 0 : firstDay;
           }
           const diff = (dow - startDow + 7) % 7;
           d.setHours(0, 0, 0, 0);

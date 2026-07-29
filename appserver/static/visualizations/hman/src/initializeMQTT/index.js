@@ -23,7 +23,7 @@ const _initializeMQTT = function (echartProps) {
 
   if (useMQTT) {
     clientId = Math.random().toString(10) + Date.now();
-    clientId.substring(0, 23); //returns part of this clientId string from the 0 index up to and excluding the 23 index because clientId must not exceed 23 chars
+    clientId = clientId.substring(0, 23); //returns part of this clientId string from the 0 index up to and excluding the 23 index because clientId must not exceed 23 chars
     tmpMqttOptions = {
       clientId: clientId,
       connectTimeout: configMqttPanelConnectionTimeout,

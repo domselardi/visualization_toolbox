@@ -1,7 +1,9 @@
+const sharedRenderedEchartsArray = [];
+
 class PrivateVars {
   constructor() {
-    this.initialized = false; // Global scoped variable keeping track of the SplunkVisualizationBase.initialize call
-    this._renderedEchartsArray = []; // Global scoped variable with multiple echarts instances
+    this.initialized = false; // Per-instance flag for SplunkVisualizationBase.initialize
+    this._renderedEchartsArray = sharedRenderedEchartsArray; // Shared chart registry used by the annotation modal
   }
 }
 
