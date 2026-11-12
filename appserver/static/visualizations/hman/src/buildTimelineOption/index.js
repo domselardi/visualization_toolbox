@@ -61,7 +61,8 @@ function makeRenderItemForHour(bandHeight, processedData) {
       const rectDrawing = {
         type: 'rect',
         shape: rectShape,
-        style: { fill: api.visual('color') },
+        style: api.style(),
+        emphasis: { style: api.styleEmphasis() },
       };
       rectangleDrawingsArray.push(rectDrawing);
       tmpEventStartPoint = 0; // Start from zero on the next row
@@ -104,7 +105,9 @@ function makeRenderItemLogic(bandHeight) {
         type: 'rect',
         transition: ['shape'],
         shape: rectShape,
-        style: { fill: api.visual('color') },
+        // Preserve itemStyle.opacity, which the legend hover handlers update.
+        style: api.style(),
+        emphasis: { style: api.styleEmphasis() },
       }
     );
   };
