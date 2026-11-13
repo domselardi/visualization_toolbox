@@ -116,6 +116,8 @@ function makeRenderItemLogic(bandHeight) {
 const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart) {
   const currentTheme = SplunkVisualizationUtils.getCurrentTheme();
   const genericTextColor = currentTheme === 'dark' ? '#fff' : '#000';
+  // Use Splunk's light-theme chart text color; inherit ECharts defaults in dark mode.
+  const axisLabelDefaults = currentTheme === 'dark' ? {} : { color: 'rgba(0, 0, 0, 0.65)' };
   // Start creating the annotated computedOption object that will be passed to echart instance
   let computedOption = {};
 
@@ -530,6 +532,7 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
       nameLocation: 'middle',
       nameGap: 25,
       axisLabel: {
+        ...axisLabelDefaults,
         formatter: function (value) {
           const minutes = Math.floor(value / 60);
           return minutes < 10 ? `0${minutes}:00` : `${minutes}:00`;
@@ -553,6 +556,10 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
     // Using spread operator to insert data property inside computedOption.yAxis
     computedOption.yAxis = { ...optionFromXmlDashboard.yAxis, data: splitByHour ? yAxisListedHours : processedCategories };
   }
+  computedOption.yAxis.axisLabel = {
+    ...axisLabelDefaults,
+    ...computedOption.yAxis.axisLabel,
+  };
 
   //These 2 keys (computedOption.series and computedOption.legend) cannot be overwritten from dashboard source code
   computedOption.series = [{
