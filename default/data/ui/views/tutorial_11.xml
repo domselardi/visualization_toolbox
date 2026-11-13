@@ -33,7 +33,7 @@
           <tr><td>1</td><td><code>end_time</code></td><td>Event end — Unix timestamp in <b>seconds</b></td></tr>
           <tr><td>2</td><td><code>internal_name</code></td><td>Y-axis row label (e.g. machine name)</td></tr>
           <tr><td>3</td><td><code>category</code></td><td>Legend/colour group (e.g. machine state)</td></tr>
-          <tr><td>4</td><td><code>fill_color</code></td><td><i>Optional</i> — hex/rgb colour; omit when using <code>timeline_useSplunkCategoricalColors=true</code></td></tr>
+          <tr><td>4</td><td><code>fill_color</code></td><td><i>Optional</i> — hex/rgb colour; when the column is missing or empty, colours come from the Splunk palette</td></tr>
         </table>
         <p>
           Timestamps must be <b>Unix seconds</b> (not milliseconds). Splunk functions
@@ -57,8 +57,8 @@
           </tr>
           <tr>
             <td><code>timeline_useSplunkCategoricalColors=false</code> (default)</td>
-            <td>Reads colour from the 5th column. Falls back to palette for rows with an empty/invalid colour</td>
-            <td>5 (fill_color required)</td>
+            <td>Reads colour from the 5th column. Falls back to the palette when the column is missing or a category has rows without a colour (see <i>Rows with and without a colour</i> below)</td>
+            <td>4 or 5 (fill_color optional)</td>
           </tr>
         </table>
 
@@ -215,7 +215,7 @@ option = {
           To control colours precisely, set
           <code>timeline_useSplunkCategoricalColors=false</code> and provide a
           <code>fill_color</code> fifth column with a valid hex or rgb value per row.
-          Rows with an empty or invalid colour fall back to the Splunk categorical palette
+          Categories with an empty colour fall back to the Splunk categorical palette
           automatically.
         </p>
 <pre><code><![CDATA[| eval fill_color=case(
@@ -231,6 +231,108 @@ option = {
           And in the viz options:
         </p>
 <pre><code><![CDATA[<option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">false</option>]]></code></pre>
+
+        <hr />
+        <h1>Rows with and without a colour</h1>
+        <p>
+          Splunk always returns a rectangular table, so a row "with four columns" next to rows
+          with five is a row whose <code>fill_color</code> is empty (NULL or <code>""</code>).
+          This typically happens when a <code>case()</code> has no default branch. Colours are
+          resolved per <b>category</b>, not per row:
+        </p>
+        <table class="mytableclass">
+          <tr><td><b>Search results</b></td><td><b>Colour used</b></td></tr>
+          <tr>
+            <td>No <code>fill_color</code> column at all (four columns)</td>
+            <td>One palette colour per category, exactly as with <code>timeline_useSplunkCategoricalColors=true</code></td>
+          </tr>
+          <tr>
+            <td>Every row of a category has a colour</td>
+            <td>The colours from the search</td>
+          </tr>
+          <tr>
+            <td>At least one row of a category has no colour</td>
+            <td>One palette colour for <b>all</b> rows of that category. Colours set on its other rows are ignored, so the bars always match the legend entry</td>
+          </tr>
+        </table>
+        <p>
+          Only an empty value triggers the fallback. A non-empty value that is not a valid colour
+          (a typo such as <code>#5cb85</code>) is passed to the chart as written, so check the
+          spelling of your colour codes.
+        </p>
+        <p>
+          The chart below leaves <code>timeline_useSplunkCategoricalColors</code> at its default and
+          sets a colour for <b>Error</b> and for only one of the three <b>Running</b> rows. Error
+          keeps its red; Running, Maintenance and Idle each get a palette colour. Hover a bar to
+          see the colour that was applied.
+        </p>
+      </html>
+
+      <viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults
+| eval b=relative_time(now(), "-8h@h")
+| eval segment=split("CNC-01,Running,0,7200;CNC-01,Maintenance,7200,9000;CNC-01,Running,9000,28800;CNC-02,Running,0,10800;CNC-02,Error,10800,14400;CNC-02,Idle,14400,28800", ";")
+| mvexpand segment
+| eval parts=split(segment, ",")
+| eval machine=mvindex(parts,0), state=mvindex(parts,1), start_time=b+tonumber(mvindex(parts,2)), end_time=b+tonumber(mvindex(parts,3))
+| eval fill_color=case(state="Error", "#d9534f", state="Running" AND machine="CNC-02", "#5cb85c")
+| table start_time end_time machine state fill_color</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Timeline</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  tooltip: {
+    trigger: 'item',
+    formatter: function (params) {
+      var d = params.data;
+      return d.value[2] + ' — ' + d.name + ': ' + d.itemStyle.color;
+    }
+  },
+  grid: {
+    left: 130
+  }
+};
+        </option>
+        <option name="height">300</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+
+      <html>
+        <p><b>Full viz source for the chart above</b> (copy into a <code>&lt;panel&gt;</code> of your own dashboard):</p>
+<pre><code><![CDATA[<viz type="visualization_toolbox.hman">
+        <search>
+          <query>| makeresults
+| eval b=relative_time(now(), "-8h@h")
+| eval segment=split("CNC-01,Running,0,7200;CNC-01,Maintenance,7200,9000;CNC-01,Running,9000,28800;CNC-02,Running,0,10800;CNC-02,Error,10800,14400;CNC-02,Idle,14400,28800", ";")
+| mvexpand segment
+| eval parts=split(segment, ",")
+| eval machine=mvindex(parts,0), state=mvindex(parts,1), start_time=b+tonumber(mvindex(parts,2)), end_time=b+tonumber(mvindex(parts,3))
+| eval fill_color=case(state="Error", "#d9534f", state="Running" AND machine="CNC-02", "#5cb85c")
+| table start_time end_time machine state fill_color</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="visualization_toolbox.hman.dataType">Timeline</option>
+        <option name="visualization_toolbox.hman.option">
+option = {
+  tooltip: {
+    trigger: 'item',
+    formatter: function (params) {
+      var d = params.data;
+      return d.value[2] + ' — ' + d.name + ': ' + d.itemStyle.color;
+    }
+  },
+  grid: {
+    left: 130
+  }
+};
+        </option>
+        <option name="height">300</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>]]></code></pre>
 
         <hr />
         <h1>splitByHour mode</h1>

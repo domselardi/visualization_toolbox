@@ -142,6 +142,11 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
   let nrOfDataFieldsToBeCheckedFor = 4; // Minimum nr of fields required for this visualization to work in case the user is choosing to use splunk categorical colors
   let configColorDataIndexBinding;
 
+  // Without a fill_color column there are no colors to read, so fall back to the splunk categorical colors
+  if (data.fields.length < 5) {
+    useSplunkCategoricalColors = 'true';
+  }
+
   if (useSplunkCategoricalColors.toLowerCase() !== 'true') {
     nrOfDataFieldsToBeCheckedFor = 5; // Minimum nr of fields required for this visualization to work in case the user is choosing to use its own colors
     configColorDataIndexBinding = 4;
