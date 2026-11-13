@@ -24,10 +24,14 @@ const _getEchartProps = function (config) {
     yAxisDataHook: config[this.getPropertyNamespaceInfo().propertyNamespace + "yAxisDataHook"],
     annotationSeriesDataIndexBinding: config[this.getPropertyNamespaceInfo().propertyNamespace + "annotationSeriesDataIndexBinding"],
     opco: config[this.getPropertyNamespaceInfo().propertyNamespace + "opco"],
-    timeline_useSplunkCategoricalColors: config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_useSplunkCategoricalColors"],
-    timeline_splitByHour: config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_splitByHour"],
-    timeline_bandHeight: config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandHeight"],
-    timeline_bandGap: config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandGap"],
+    timeline_useSplunkCategoricalColors: config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline.useSplunkCategoricalColors"]
+      ?? config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_useSplunkCategoricalColors"],
+    timeline_splitByHour: config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline.splitByHour"]
+      ?? config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_splitByHour"],
+    timeline_bandHeight: config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline.bandHeight"]
+      ?? config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandHeight"],
+    timeline_bandGap: config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline.bandGap"]
+      ?? config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandGap"],
   }
 }
 

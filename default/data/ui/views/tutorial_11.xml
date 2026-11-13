@@ -23,6 +23,30 @@
 
         <hr />
 
+        <h1>Timeline option names</h1>
+        <p>
+          All Timeline settings support names with a dot.
+          The older names with an underscore still work.
+          If both names are set for a setting, the name with a dot takes priority.
+        </p>
+        <table class="mytableclass">
+          <tr><td><b>New name</b></td><td><b>Older name</b></td></tr>
+          <tr><td><code>timeline.useSplunkCategoricalColors</code></td><td><code>timeline_useSplunkCategoricalColors</code></td></tr>
+          <tr><td><code>timeline.splitByHour</code></td><td><code>timeline_splitByHour</code></td></tr>
+          <tr><td><code>timeline.bandHeight</code></td><td><code>timeline_bandHeight</code></td></tr>
+          <tr><td><code>timeline.bandGap</code></td><td><code>timeline_bandGap</code></td></tr>
+        </table>
+        <p>
+          Add <code>visualization_toolbox.hman.</code> before each name in a dashboard option.
+          For example:
+        </p>
+<pre><code><![CDATA[<option name="visualization_toolbox.hman.timeline.useSplunkCategoricalColors">true</option>
+<option name="visualization_toolbox.hman.timeline.splitByHour">true</option>
+<option name="visualization_toolbox.hman.timeline.bandHeight">5</option>
+<option name="visualization_toolbox.hman.timeline.bandGap">5</option>]]></code></pre>
+
+        <hr />
+
         <h1>Required data format</h1>
         <p>
           The search must return these columns in order:
@@ -51,7 +75,7 @@
           All <b>Running</b> events share one palette color, even on different machines.
         </p>
         <p>
-          Use <code>timeline_useSplunkCategoricalColors</code> to choose how colors are set.
+          Use <code>timeline.useSplunkCategoricalColors</code> to choose how colors are set.
           This setting applies to <code>dataType=Timeline</code>, including <code>splitByHour</code> mode.
         </p>
         <table class="mytableclass">
@@ -74,7 +98,7 @@
         <p>
           To use palette colors, add this option inside your <code>&lt;viz&gt;</code> element:
         </p>
-<pre><code><![CDATA[<option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>]]></code></pre>
+<pre><code><![CDATA[<option name="visualization_toolbox.hman.timeline.useSplunkCategoricalColors">true</option>]]></code></pre>
         <p>
           You can then return just the four required columns:
         </p>
@@ -299,9 +323,9 @@
           <latest>$time_range.latest$</latest>
         </search>
         <option name="visualization_toolbox.hman.dataType">Timeline</option>
-        <option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>
-        <option name="visualization_toolbox.hman.timeline_bandHeight">36</option>
-        <option name="visualization_toolbox.hman.timeline_bandGap">6</option>
+        <option name="visualization_toolbox.hman.timeline.useSplunkCategoricalColors">true</option>
+        <option name="visualization_toolbox.hman.timeline.bandHeight">36</option>
+        <option name="visualization_toolbox.hman.timeline.bandGap">6</option>
         <option name="visualization_toolbox.hman.option">
 option = {
   title: {
@@ -352,9 +376,9 @@ option = {
           <latest>$time_range.latest$</latest>
         </search>
         <option name="visualization_toolbox.hman.dataType">Timeline</option>
-        <option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>
-        <option name="visualization_toolbox.hman.timeline_bandHeight">36</option>
-        <option name="visualization_toolbox.hman.timeline_bandGap">6</option>
+        <option name="visualization_toolbox.hman.timeline.useSplunkCategoricalColors">true</option>
+        <option name="visualization_toolbox.hman.timeline.bandHeight">36</option>
+        <option name="visualization_toolbox.hman.timeline.bandGap">6</option>
         <option name="visualization_toolbox.hman.option">
 option = {
   title: {
@@ -388,7 +412,7 @@ option = {
         <hr />
         <h1>Choose your own colors</h1>
         <p>
-          Set <code>timeline_useSplunkCategoricalColors=false</code>.
+          Set <code>timeline.useSplunkCategoricalColors=false</code>.
           Add <code>fill_color</code> as the fifth search column.
           Give each row a valid color, such as <code>#d9534f</code>.
           Use the same color for every row in a category so the bars match the legend.
@@ -405,7 +429,7 @@ option = {
         <p>
           Add this option inside your <code>&lt;viz&gt;</code> element:
         </p>
-<pre><code><![CDATA[<option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">false</option>]]></code></pre>
+<pre><code><![CDATA[<option name="visualization_toolbox.hman.timeline.useSplunkCategoricalColors">false</option>]]></code></pre>
 
         <hr />
         <h1>What happens when a color is missing?</h1>
@@ -514,7 +538,7 @@ option = {
         <hr />
         <h1>splitByHour mode</h1>
         <p>
-          Setting <code>timeline_splitByHour=true</code> changes the layout: the y-axis becomes
+          Setting <code>timeline.splitByHour=true</code> changes the layout: the y-axis becomes
           hourly time slots and each machine's events are drawn as bars within those slots.
           This lets you see — for each hour of the shift — which machines were active, idle,
           or in maintenance, all on the same chart.
@@ -561,10 +585,10 @@ option = {
           <latest>$time_range.latest$</latest>
         </search>
         <option name="visualization_toolbox.hman.dataType">Timeline</option>
-        <option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>
-        <option name="visualization_toolbox.hman.timeline_splitByHour">true</option>
-        <option name="visualization_toolbox.hman.timeline_bandHeight">32</option>
-        <option name="visualization_toolbox.hman.timeline_bandGap">8</option>
+        <option name="visualization_toolbox.hman.timeline.useSplunkCategoricalColors">true</option>
+        <option name="visualization_toolbox.hman.timeline.splitByHour">true</option>
+        <option name="visualization_toolbox.hman.timeline.bandHeight">32</option>
+        <option name="visualization_toolbox.hman.timeline.bandGap">8</option>
         <option name="visualization_toolbox.hman.option">
 option = {
   title: {
@@ -656,10 +680,10 @@ option = {
           <latest>$time_range.latest$</latest>
         </search>
         <option name="visualization_toolbox.hman.dataType">Timeline</option>
-        <option name="visualization_toolbox.hman.timeline_useSplunkCategoricalColors">true</option>
-        <option name="visualization_toolbox.hman.timeline_splitByHour">true</option>
-        <option name="visualization_toolbox.hman.timeline_bandHeight">32</option>
-        <option name="visualization_toolbox.hman.timeline_bandGap">8</option>
+        <option name="visualization_toolbox.hman.timeline.useSplunkCategoricalColors">true</option>
+        <option name="visualization_toolbox.hman.timeline.splitByHour">true</option>
+        <option name="visualization_toolbox.hman.timeline.bandHeight">32</option>
+        <option name="visualization_toolbox.hman.timeline.bandGap">8</option>
         <option name="visualization_toolbox.hman.option">
 option = {
   title: {
@@ -733,16 +757,22 @@ option = {
         <table class="mytableclass">
           <tr><td><b>Option</b></td><td><b>Default</b></td><td><b>Description</b></td></tr>
           <tr>
-            <td><code>timeline_bandHeight</code></td>
+            <td><code>timeline.bandHeight</code></td>
             <td>32</td>
             <td>Height in pixels of each event rectangle</td>
           </tr>
           <tr>
-            <td><code>timeline_bandGap</code></td>
+            <td><code>timeline.bandGap</code></td>
             <td>8</td>
             <td>Vertical gap in pixels between rows</td>
           </tr>
         </table>
+<pre><code><![CDATA[<option name="visualization_toolbox.hman.timeline.bandGap">5</option>
+<option name="visualization_toolbox.hman.timeline.bandHeight">5</option>]]></code></pre>
+        <p>
+          The older names <code>timeline_bandGap</code> and <code>timeline_bandHeight</code> still work.
+          If both names are set for an option, the name with a dot takes priority.
+        </p>
         <p>
           The chart canvas height is automatically computed as
           <code>(bandHeight + bandGap) * numberOfRows + gridTop + gridBottom</code>.

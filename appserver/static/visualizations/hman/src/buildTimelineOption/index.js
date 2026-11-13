@@ -122,10 +122,14 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
   let computedOption = {};
 
   let configOption = config[this.getPropertyNamespaceInfo().propertyNamespace + "option"];
-  let useSplunkCategoricalColors = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_useSplunkCategoricalColors"] || 'false';
-  let splitByHour = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_splitByHour"];
-  let _private_bandHeight = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandHeight"];
-  let _private_bandGap = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandGap"];
+  let useSplunkCategoricalColors = (config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline.useSplunkCategoricalColors"]
+    ?? config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_useSplunkCategoricalColors"]) || 'false';
+  let splitByHour = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline.splitByHour"]
+    ?? config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_splitByHour"];
+  let _private_bandHeight = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline.bandHeight"]
+    ?? config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandHeight"];
+  let _private_bandGap = config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline.bandGap"]
+    ?? config[this.getPropertyNamespaceInfo().propertyNamespace + "timeline_bandGap"];
   if (typeof splitByHour !== 'undefined' && splitByHour === 'true') {
     splitByHour = true;
   } else {
