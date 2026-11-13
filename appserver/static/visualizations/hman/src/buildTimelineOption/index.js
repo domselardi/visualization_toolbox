@@ -178,6 +178,8 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
   // Read the legends name from data.fields[3]
   let configLegendsDataIndexBinding = 3;
 
+  const hourIndexDataIndexBinding = splitByHour ? computedDimensions.indexOf('hour_index') : -1;
+
   // Before doing any processing ignore any rows that have any of the start_time, end_time, internal_name or category properties empty
   // The data.rows array contains sub-arrays, each with at least four elements (representing start_time, end_time, internal_name, and category)
   // For each sub-array (row), we use slice(0, 4) to consider only the first four elements.
@@ -364,6 +366,10 @@ const _buildTimelineOption = function (data, config, tmpChartInstance, tmpChart)
     let dynamicValue = tmpRow;
     dynamicValue[configStartTimeDataIndexBinding] = parseFloat(tmpStartTime * 1000);//start_time (javascript timestamp in miliseconds)
     dynamicValue[configEndTimeDataIndexBinding] = parseFloat(tmpEndTime * 1000);//end_time (javascript timestamp in miliseconds)
+    if (hourIndexDataIndexBinding >= 0) {
+      // ECharts treats strings as category labels, but hour_index identifies a numeric row.
+      dynamicValue[hourIndexDataIndexBinding] = Number(dynamicValue[hourIndexDataIndexBinding]);
+    }
     dynamicValue.push(tmpDuration); //duration
     dynamicValue.push(tmpProcessedInternalNameIdx); //legend index,
     dynamicValue.push(tmpStartTime); //unix_start_time (unix timestamp in seconds)
